@@ -43,7 +43,12 @@ Linux: build it yourself (see Build below). It opens in your browser.
 
 ![Replay](docs/replay.jpg)
 
-- First person, behind, side or top view with the player's hitbox, so edge landings are easy to see.
+- First person, behind, side or top view.
+- **Real player and weapon models** from your own game (`cstrike/models`, found automatically or picked under
+  *Models folder*): the CT/T model and weapon from the demo, with run, crouch and jump animations and aiming.
+  The viewmodel shows as in the demo (hidden after `/hide`), or always / never. The player's hitbox is still
+  available to judge edge landings. Models are read from your install, never shipped with DEMviewer.
+- **Fullscreen** with play, speed (0.1x to 1x) and time controls on screen.
 - Moving blocks (bhop blocks, longjumparena layouts) move like they did in the demo.
 
 **What-if**
@@ -52,6 +57,7 @@ Linux: build it yourself (see Build below). It opens in your browser.
 
 - Re-runs the player's real inputs from take-off with a different prestrafe, jumpoff or FOG, using GoldSrc air physics.
 - Shows whether it lands, the new distance, a self-check of the simulator against the real jump, and a replay with the real jump as a ghost.
+  The simulated run is drawn as the opposite team's model, so it never gets mixed up with the real one.
   Simulated replays are always marked **WHAT-IF · SIMULATED**.
 
 ## Releases and versions
@@ -110,6 +116,7 @@ go build -trimpath -ldflags "-s -w -H=windowsgui" -o DEMviewer.exe .
 | `net.go` | Decodes network messages: delta descriptions, baselines and packet entities, used to place moving brush entities (bhop blocks, arena doors) |
 | `bsp.go` | Loads maps (built-in `embedmaps/*.bsp.gz` first, then map folders), block edges and floors |
 | `stats.go` | Jump detection and kz_jump_stats-style stats: distance, pre, jumpoff, block, landing, strafes, efficiency, GC efficiency, jump type, mouse slaps, replay data |
+| `web/studio.js` | GoldSrc studio model (.mdl) loader and skeletal renderer for players, weapons and viewmodels |
 | `sim.go` | What-if simulation: re-runs the real post-jump inputs with a different pre, jumpoff or FOG |
 | `main.go` | Local HTTP server and API, folder scanning, the list filter |
 | `ui_windows.go`, `dialog_windows.go` | WebView2 window and native Windows browse dialogs |

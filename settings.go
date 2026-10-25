@@ -11,6 +11,8 @@ import (
 type Settings struct {
 	DemoFolder string `json:"demoFolder"`
 	MapsFolder string `json:"mapsFolder"`
+	// cstrike\\models (player and weapon models for the replay)
+	ModelsFolder string `json:"modelsFolder"`
 }
 
 var (

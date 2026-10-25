@@ -44,9 +44,15 @@ type Demo struct {
 	MV []mvState
 	// local player's userinfo (cl_lw ...), cvar values the server forced
 	// with stufftext, and server cvar change notices
-	UserInfo  map[string]string
-	Forced    map[string]string
-	CvarNotes []string
+	UserInfo map[string]string
+	// model precache: index -> "models/v_knife.mdl"
+	Resources  map[int]string
+	PlayerSlot int
+	// local player's viewmodel per frame ([frame, model index]; 0 = hidden)
+	viewModelUpd   [][2]int
+	weaponModelUpd [][3]int // [frame, entity, model index]
+	Forced         map[string]string
+	CvarNotes      []string
 
 	baseline   map[int]entState
 	entUpdates []entUpdate

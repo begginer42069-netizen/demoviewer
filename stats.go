@@ -139,8 +139,13 @@ type Replay struct {
 	Moves map[int][]float32 `json:"moves,omitempty"`
 	D     []float64         `json:"d"`    // per frame: eye xyz, pitch, yaw, roll, buttons, speed, onground
 	Duck  []int8            `json:"duck"` // per frame: body ducked (duck state)
-	T0    int               `json:"t0"`
-	T1    int               `json:"t1"`
+	// player model ("gign") and weapon models as [replay frame, "v_knife"]
+	// changes; "" = nothing shown (e.g. viewmodel hidden with /hide)
+	Player string   `json:"player,omitempty"`
+	VModel [][2]any `json:"vmodel,omitempty"`
+	PModel [][2]any `json:"pmodel,omitempty"`
+	T0     int      `json:"t0"`
+	T1     int      `json:"t1"`
 }
 
 func eyeOfs(f *Frame) float64 { return f.View[2] - f.Origin[2] }
@@ -884,6 +889,7 @@ func replay(dm *Demo, i, end int) *Replay {
 	}
 	r := &Replay{Map: dm.Map, T0: i - a, T1: end - a, Ents: dm.brushOffsets(i)}
 	r.Moves = dm.brushTrack(a, b, r.Ents)
+	dm.fillModels(r, a, b)
 	for k := a; k < b; k++ {
 		f := &F[k]
 		og := 0.0
@@ -898,4 +904,56 @@ func replay(dm *Demo, i, end int) *Replay {
 		r.Duck = append(r.Duck, dk)
 	}
 	return r
+}
+
+func mdlName(path string) string {
+	n := path
+	if i := strings.LastIndex(n, "/"); i >= 0 {
+		n = n[i+1:]
+	}
+	return strings.TrimSuffix(n, ".mdl")
+}
+
+// fillModels adds the player model and the weapon models shown on frames
+// a..b-1 of the demo to a replay.
+func (dm *Demo) fillModels(r *Replay, a, b int) {
+	r.Player = dm.UserInfo["model"]
+	at := func(upd [][2]int, k int) (int, bool) {
+		v, ok := 0, false
+		for _, u := range upd {
+			if u[0] > k {
+				break
+			}
+			v, ok = u[1], true
+		}
+		return v, ok
+	}
+	ent := dm.PlayerSlot + 1
+	var wupd [][2]int
+	for _, u := range dm.weaponModelUpd {
+		if u[1] == ent {
+			wupd = append(wupd, [2]int{u[0], u[2]})
+		}
+	}
+	name := func(idx int) string {
+		if idx <= 0 {
+			return ""
+		}
+		return mdlName(dm.Resources[idx])
+	}
+	lastV, lastP := "\x00", "\x00"
+	for k := a; k < b; k++ {
+		if v, ok := at(dm.viewModelUpd, k); ok || k == a {
+			if n := name(v); n != lastV {
+				r.VModel = append(r.VModel, [2]any{k - a, n})
+				lastV = n
+			}
+		}
+		if v, ok := at(wupd, k); ok || k == a {
+			if n := name(v); n != lastP {
+				r.PModel = append(r.PModel, [2]any{k - a, n})
+				lastP = n
+			}
+		}
+	}
 }

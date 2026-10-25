@@ -228,6 +228,7 @@ func decodeEntities(dm *Demo, raw []byte, msgs [][]byte) {
 		}
 	}
 	maxcl, dm.baseline = bestMax, best
+	dm.Resources = parseResourceList(raw, lim)
 	if dm.baseline == nil {
 		return
 	}
@@ -254,7 +255,11 @@ func decodeEntities(dm *Demo, raw []byte, msgs [][]byte) {
 			if b.bits(1) != 0 {
 				b.bits(8)
 			}
-			readDelta(b, descs["clientdata_t"], nil, nil)
+			cd := map[string]float64{}
+			readDelta(b, descs["clientdata_t"], cd, nil)
+			if v, ok := cd["viewmodel"]; ok {
+				dm.viewModelUpd = append(dm.viewModelUpd, [2]int{fi, int(v)})
+			}
 			for b.bits(1) != 0 {
 				b.bits(6)
 				readDelta(b, descs["weapon_data_t"], nil, nil)
@@ -315,6 +320,11 @@ func decodeEntities(dm *Demo, raw []byte, msgs [][]byte) {
 				}
 				if mi, ok := vals["modelindex"]; ok {
 					u.Model = int(mi)
+				}
+				if num >= 1 && num <= maxcl {
+					if wm, ok := vals["weaponmodel"]; ok {
+						dm.weaponModelUpd = append(dm.weaponModelUpd, [3]int{fi, num, int(wm)})
+					}
 				}
 				if num > maxcl {
 					dm.entUpdates = append(dm.entUpdates, u)
@@ -467,4 +477,59 @@ func rotateBrush(v [3]float64, p, y, r float64) [3]float64 {
 		x0, y0 = x0*c-y0*s, x0*s+y0*c
 	}
 	return [3]float64{x0, y0, z0}
+}
+
+// parseResourceList finds svc_resourcelist (43) in the loading part of the
+// demo and returns model precache index -> name ("models/v_knife.mdl").
+func parseResourceList(raw []byte, lim int) map[int]string {
+	best := map[int]string{}
+	for pos := 544; pos < lim; pos++ {
+		if raw[pos] != 43 {
+			continue
+		}
+		func() {
+			defer func() { recover() }()
+			b := &bitReader{d: raw, bit: (pos + 1) * 8}
+			n := int(b.bits(12))
+			if n < 5 || n > 4096 {
+				return
+			}
+			out := map[int]string{}
+			for k := 0; k < n; k++ {
+				typ := b.bits(4)
+				name := b.str()
+				if len(name) == 0 || len(name) > 128 {
+					return
+				}
+				for _, c := range name {
+					if c < 32 || c > 126 {
+						return
+					}
+				}
+				idx := int(b.bits(12))
+				b.bits(24) // size
+				flags := b.bits(3)
+				if flags&4 != 0 { // custom: md5
+					for q := 0; q < 16; q++ {
+						b.bits(8)
+					}
+				}
+				if b.bits(1) != 0 { // reserved
+					for q := 0; q < 32; q++ {
+						b.bits(8)
+					}
+				}
+				if typ == 2 { // t_model
+					out[idx] = name
+				}
+			}
+			if len(out) > len(best) {
+				best = out
+			}
+		}()
+		if len(best) > 20 {
+			break
+		}
+	}
+	return best
 }

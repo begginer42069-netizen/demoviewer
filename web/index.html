@@ -76,6 +76,8 @@ pre.pl{white-space:pre-wrap;font:12px ui-monospace,Consolas,monospace;margin:0 0
  <button class="primary" id="bfolder">Browse folder&hellip;</button><button id="bdemo">Open demo&hellip;</button><button id="open">Reload</button>
  <label style="flex:1;min-width:220px">Maps folder <span class="mute">(extra .bsp files, optional)</span><input type="text" id="mapsdir" readonly placeholder="built-in maps + cstrike\maps"></label>
  <button id="bmaps">Browse&hellip;</button>
+ <label style="flex:1;min-width:220px">Models folder <span class="mute">(cstrike\models, for players and weapons)</span><input type="text" id="mdldir" readonly placeholder="found automatically"></label>
+ <button id="bmdl">Browse&hellip;</button>
  <label>Show<select id="filt"><option value="main">best jumps</option><option value="all">all attempts</option><option value="LANDED">all landed</option><option value="FAILED">all failed</option></select></label>
  <label>Type<select id="tfilt"><option value="all">all types</option></select></label>
  <span class="mute small" id="cnt"></span>
@@ -89,12 +91,14 @@ pre.pl{white-space:pre-wrap;font:12px ui-monospace,Consolas,monospace;margin:0 0
   <div class="card"><h2>Recorded in the demo by the server plugins</h2><div id="plugin"></div></div>
  </div>
  <div class="card"><h2>Replay &mdash; first person in the real map</h2>
-  <div style="position:relative;background:#000;border-radius:6px;overflow:hidden"><canvas id="rc" style="width:100%;height:540px;display:block"></canvas><canvas id="rh" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none"></canvas>
+  <div style="position:relative;background:#000;border-radius:6px;overflow:hidden"><canvas id="rc" style="width:100%;height:540px;display:block"></canvas><canvas id="rh" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none"></canvas><button id="rfs" style="position:absolute;right:10px;bottom:34px;opacity:.85">Fullscreen</button><div id="fsbar" style="display:none;position:absolute;left:12px;top:12px;gap:8px;align-items:center;background:rgba(0,0,0,.55);padding:8px 10px;border-radius:8px;color:#fff;font-size:13px"><button id="fsp">Play</button><button id="fst">From take-off</button><select id="fsv"><option value="0.1">0.1x</option><option value="0.25">0.25x</option><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1">1x</option></select><input type="range" id="fss" min="0" max="100" value="0" style="width:320px"></div>
   <div id="rmsg" style="display:none;position:absolute;left:12px;top:12px;right:12px;background:rgba(0,0,0,.7);color:#fff;padding:10px 12px;border-radius:6px;font-size:13px"></div></div>
   <div class="bar" style="margin:10px 0 0"><button id="rp">Play</button><button id="rt">From take-off</button>
   <label>Show<select id="rmode"><option value="real">Real jump</option><option value="wi" disabled>What-if (simulated)</option></select></label>
   <label><span><input type="checkbox" id="gh" checked> ghost of the other run</span></label>
-  <label>Speed<select id="rv"><option value="0.1">0.1x</option><option value="0.25" selected>0.25x</option><option value="0.5">0.5x</option><option value="1">1x (real time)</option></select></label>
+  <label>Speed<select id="rv"><option value="0.1">0.1x</option><option value="0.25" selected>0.25x</option><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1">1x (real time)</option></select></label>
+  <label>Player<select id="rplayer"><option value="model">Model (from your game)</option><option value="box">Hitbox</option><option value="both">Model + hitbox</option></select></label>
+  <label>Viewmodel<select id="rvm"><option value="demo">As in the demo</option><option value="show">Always show</option><option value="hide">Hide</option></select></label>
   <label>Camera<select id="rcam"><option value="fp">First person</option><option value="chase">Behind (shows hitbox)</option><option value="side">Side (shows hitbox)</option><option value="top">Top (shows hitbox)</option></select></label>
   <label>FOV <span id="rfl">100</span><input type="range" id="rf2" min="70" max="120" value="100"></label>
   <label style="flex:1;min-width:200px">Time<input type="range" id="rs" min="0" max="100" value="0" style="width:100%"></label></div></div>
@@ -124,11 +128,12 @@ const fx=(v,d=3)=>v==null||isNaN(v)?'—':v.toFixed(d);
 let STATE=null,J=null,WI=null,sel=null,SORT={k:'dist',d:1};
 try{const s=JSON.parse(localStorage.getItem('dvSort')||'null');if(s&&s.k)SORT=s}catch(e){}
 
-async function loadState(){const r=await fetch('/api/state');STATE=await r.json();if(STATE.version)$('ver').textContent='· v'+STATE.version.replace(/^v/,'');$('folder').value=STATE.folder||'';$('mapsdir').value=STATE.mapsFolder||'';renderRank()}
+async function loadState(){const r=await fetch('/api/state');STATE=await r.json();if(STATE.version)$('ver').textContent='· v'+STATE.version.replace(/^v/,'');$('folder').value=STATE.folder||'';$('mapsdir').value=STATE.mapsFolder||'';$('mdldir').value=STATE.modelsFolder||'';renderRank()}
 async function browse(kind){const r=await fetch('/api/browse?kind='+kind);if(!r.ok){alertBox(await r.text());return}const x=await r.json();if(x.cancelled)return;
  await loadState();if(kind==='demo'&&x.file){const hs=STATE.jumps.filter(j=>j.name===x.file||j.name.endsWith('\\'+x.file)||j.name.endsWith('/'+x.file)),hit=hs.find(j=>j.main)||hs[0];if(hit)openJump(hit.d,hit.j);else alertBox('No long jumps found in '+x.file)}
- else if(J&&kind==='maps'){openJump(J._d,J._j)}}
-$('bfolder').onclick=()=>browse('folder');$('bdemo').onclick=()=>browse('demo');$('bmaps').onclick=()=>browse('maps');
+ else if(J&&kind==='maps'){openJump(J._d,J._j)}
+ else if(kind==='models'){MDL.cache.clear()}}
+$('bfolder').onclick=()=>browse('folder');$('bdemo').onclick=()=>browse('demo');$('bmaps').onclick=()=>browse('maps');$('bmdl').onclick=()=>browse('models');
 function renderRank(){
  const types=[...new Set(STATE.jumps.map(x=>x.type))].sort(),tf0=$('tfilt').value;
  $('tfilt').innerHTML='<option value="all">all types</option>'+types.map(x=>`<option${x===tf0?' selected':''}>${x}</option>`).join('');
@@ -328,6 +333,127 @@ function viewProj(eye,p,y,r,aspect){const D=dirs(p,y,r),dot=(a,b)=>a[0]*b[0]+a[1
  const o=new Array(16).fill(0);for(let c=0;c<4;c++)for(let r2=0;r2<4;r2++){let s=0;for(let k=0;k<4;k++)s+=P[k*4+r2]*V[c*4+k];o[c*4+r2]=s}return o}
 
 
+// ---------- GoldSrc studio models (.mdl v10): parse, animate, draw ----------
+// Models are read from the player's own cstrike/models folder through /mdl/.
+const MDL={cache:new Map()};
+function mdlParse(buf,texBuf){
+ const dv=new DataView(buf),u8=new Uint8Array(buf),I=o=>dv.getInt32(o,true),F=o=>dv.getFloat32(o,true),S=o=>dv.getInt16(o,true),US=o=>dv.getUint16(o,true);
+ const str=(o,n)=>{let s='';for(let i=0;i<n&&u8[o+i];i++)s+=String.fromCharCode(u8[o+i]);return s};
+ if(str(0,4)!=='IDST'||I(4)!==10)throw new Error('not a GoldSrc model');
+ const M={bones:[],seqs:[],tex:[],parts:[],skins:[],dv,u8};
+ for(let k=0,o=I(144);k<I(140);k++,o+=112){const v=[],sc=[];for(let j=0;j<6;j++){v.push(F(o+64+j*4));sc.push(F(o+88+j*4))}
+  M.bones.push({name:str(o,32),parent:I(o+32),value:v,scale:sc})}
+ for(let k=0,o=I(168);k<I(164);k++,o+=176)M.seqs.push({name:str(o,32).toLowerCase(),fps:F(o+32),flags:I(o+36),frames:I(o+56),lin:[F(o+76),F(o+80),F(o+84)],blends:I(o+120),anim:I(o+124),group:I(o+156)});
+ // textures: in this file, or in the <name>T.mdl companion
+ const td=texBuf?new DataView(texBuf):dv,tu=texBuf?new Uint8Array(texBuf):u8,TI=o=>td.getInt32(o,true);
+ for(let k=0,o=TI(184);k<TI(180);k++,o+=80){const w=TI(o+68),h=TI(o+72),fl=TI(o+64),di=TI(o+76),pal=di+w*h,rgba=new Uint8Array(w*h*4);
+  for(let i=0;i<w*h;i++){const c=tu[di+i];rgba[i*4]=tu[pal+c*3];rgba[i*4+1]=tu[pal+c*3+1];rgba[i*4+2]=tu[pal+c*3+2];rgba[i*4+3]=(fl&0x40)&&c===255?0:255}
+  M.tex.push({w,h,rgba,masked:!!(fl&0x40)})}
+ const nref=TI(192);for(let k=0;k<nref;k++)M.skins.push(td.getInt16(TI(200)+k*2,true));
+ // body parts: first sub-model of each (default body)
+ for(let k=0,o=I(208);k<I(204);k++,o+=76){const mi=I(o+72);const mo=mi;
+  const nverts=I(mo+80),vinfo=I(mo+84),vidx=I(mo+88),nn=I(mo+92),ninfo=I(mo+96),nidx=I(mo+100);
+  const vb=new Uint8Array(nverts),vp=new Float32Array(nverts*3),nb=new Uint8Array(nn),np=new Float32Array(nn*3);
+  for(let i=0;i<nverts;i++){vb[i]=u8[vinfo+i];vp[i*3]=F(vidx+i*12);vp[i*3+1]=F(vidx+i*12+4);vp[i*3+2]=F(vidx+i*12+8)}
+  for(let i=0;i<nn;i++){nb[i]=u8[ninfo+i];np[i*3]=F(nidx+i*12);np[i*3+1]=F(nidx+i*12+4);np[i*3+2]=F(nidx+i*12+8)}
+  const meshes=[];
+  for(let m=0,mo2=I(mo+76);m<I(mo+72);m++,mo2+=20){const skin=I(mo2+8),tex=M.skins[skin]!=null?M.skins[skin]:skin,tw=(M.tex[tex]||{w:1}).w,th=(M.tex[tex]||{h:1}).h;
+   const tris=[];let p=I(mo2+4);
+   for(;;){let n=S(p);p+=2;if(!n)break;const fan=n<0;n=Math.abs(n);const vs=[];
+    for(let i=0;i<n;i++){vs.push([US(p),US(p+2),S(p+4)/tw,S(p+6)/th]);p+=8}
+    for(let i=2;i<n;i++){if(fan)tris.push(vs[0],vs[i-1],vs[i]);else if(i&1)tris.push(vs[i-1],vs[i-2],vs[i]);else tris.push(vs[i-2],vs[i-1],vs[i])}}
+   meshes.push({tex,tris})}
+  M.parts.push({vb,vp,nb,np,meshes})}
+ return M}
+// one animation value of bone b, channel j (0-2 pos, 3-5 rot) at integer frame f
+function mdlAnimVal(M,animOff,b,j,f){const bone=M.bones[b],dv=M.dv,base=animOff+b*12,off=dv.getUint16(base+j*2,true);
+ if(!off)return bone.value[j];let p=base+off,k=f;
+ for(let guard=0;guard<1000;guard++){const valid=M.u8[p],total=M.u8[p+1];if(total>k)break;k-=total;p+=(valid+1)*2;if(!total)break}
+ const valid=M.u8[p],v=valid>k?dv.getInt16(p+(k+1)*2,true):dv.getInt16(p+valid*2,true);return bone.value[j]+v*bone.scale[j]}
+function eulerQ(x,y,z){const sr=Math.sin(x/2),cr=Math.cos(x/2),sp=Math.sin(y/2),cp=Math.cos(y/2),sy=Math.sin(z/2),cy=Math.cos(z/2);
+ return[sr*cp*cy-cr*sp*sy,cr*sp*cy+sr*cp*sy,cr*cp*sy-sr*sp*cy,cr*cp*cy+sr*sp*sy]}
+function qslerp(a,b,t){let d=a[0]*b[0]+a[1]*b[1]+a[2]*b[2]+a[3]*b[3];if(d<0){b=b.map(x=>-x);d=-d}
+ if(d>0.9995){const q=a.map((x,i)=>x+(b[i]-x)*t),l=Math.hypot(...q);return q.map(x=>x/l)}
+ const th=Math.acos(d),s=Math.sin(th),wa=Math.sin((1-t)*th)/s,wb=Math.sin(t*th)/s;return a.map((x,i)=>x*wa+b[i]*wb)}
+// local pose (pos + quat per bone) of a sequence at a fractional frame and blend
+function mdlPose(M,si,frame,blend){const s=M.seqs[si];if(!s)return null;const nb=M.bones.length,fr=Math.max(0,Math.min(s.frames-1,frame)),f0=Math.floor(fr),f1=Math.min(s.frames-1,f0+1),t=fr-f0;
+ const one=bi=>{const a=s.anim+bi*nb*12,P=[],Q=[];for(let b=0;b<nb;b++){const pa=[0,1,2].map(j=>mdlAnimVal(M,a,b,j,f0)),pb=[0,1,2].map(j=>mdlAnimVal(M,a,b,j,f1));
+   const qa=eulerQ(...[3,4,5].map(j=>mdlAnimVal(M,a,b,j,f0))),qb=eulerQ(...[3,4,5].map(j=>mdlAnimVal(M,a,b,j,f1)));
+   P.push(pa.map((x,i)=>x+(pb[i]-x)*t));Q.push(qslerp(qa,qb,t))}return{P,Q}};
+ if(s.blends<=1)return one(0);
+ const x=Math.max(0,Math.min(s.blends-1,blend*(s.blends-1))),b0=Math.floor(x),b1=Math.min(s.blends-1,b0+1),w=x-b0,A=one(b0);if(w<0.01)return A;const B=one(b1);
+ return{P:A.P.map((p,i)=>p.map((v,j)=>v+(B.P[i][j]-v)*w)),Q:A.Q.map((q,i)=>qslerp(q,B.Q[i],w))}}
+// bone matrices (3x4, row major) from a pose, optionally taking some bones from another skeleton by name
+function mdlBones(M,pose,merge){const nb=M.bones.length,out=new Array(nb);
+ for(let b=0;b<nb;b++){if(merge&&merge.has(M.bones[b].name)){out[b]=merge.get(M.bones[b].name);continue}
+  const[x,y,z,w]=pose.Q[b],p=pose.P[b];
+  const m=[1-2*(y*y+z*z),2*(x*y-w*z),2*(x*z+w*y),p[0], 2*(x*y+w*z),1-2*(x*x+z*z),2*(y*z-w*x),p[1], 2*(x*z-w*y),2*(y*z+w*x),1-2*(x*x+y*y),p[2]];
+  const par=M.bones[b].parent;if(par<0){out[b]=m;continue}const a=out[par],r=new Array(12);
+  for(let i=0;i<3;i++){for(let j=0;j<3;j++)r[i*4+j]=a[i*4]*m[j]+a[i*4+1]*m[4+j]+a[i*4+2]*m[8+j];r[i*4+3]=a[i*4]*m[3]+a[i*4+1]*m[7]+a[i*4+2]*m[11]+a[i*4+3]}
+  out[b]=r}return out}
+function mdlSeq(M,name){return M.seqs.findIndex(s=>s.name===name)}
+// ---- GL side ----
+let sprog,sPos,sNor,sUv,sVP,sTex,sTint,sCut;
+function initStudioGL(){const vs=`#version 300 es
+in vec3 p;in vec3 n;in vec2 uv;uniform mat4 vp;out vec2 vuv;out float vl;
+void main(){vuv=uv;vec3 L=normalize(vec3(0.4,0.3,0.85));vl=0.55+0.5*max(dot(normalize(n),L),0.0);gl_Position=vp*vec4(p,1.0);}`;
+ const fs=`#version 300 es
+precision highp float;in vec2 vuv;in float vl;uniform sampler2D tex;uniform vec4 tint;uniform float cut;out vec4 o;
+void main(){vec4 c=texture(tex,vuv);if(cut>0.5&&c.a<0.5)discard;o=vec4(mix(c.rgb*vl,tint.rgb,tint.a),1.0);}`;
+ const sh=(t,s)=>{const x=gl.createShader(t);gl.shaderSource(x,s);gl.compileShader(x);if(!gl.getShaderParameter(x,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(x));return x};
+ sprog=gl.createProgram();gl.attachShader(sprog,sh(gl.VERTEX_SHADER,vs));gl.attachShader(sprog,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(sprog);
+ sPos=gl.getAttribLocation(sprog,'p');sNor=gl.getAttribLocation(sprog,'n');sUv=gl.getAttribLocation(sprog,'uv');
+ sVP=gl.getUniformLocation(sprog,'vp');sTex=gl.getUniformLocation(sprog,'tex');sTint=gl.getUniformLocation(sprog,'tint');sCut=gl.getUniformLocation(sprog,'cut')}
+// fetch + parse a model by path under cstrike/models ("player/gign/gign.mdl"); null while loading or when missing
+function mdlGet(path){if(!path)return null;let e=MDL.cache.get(path);if(e)return e.M||null;e={M:null};MDL.cache.set(path,e);
+ (async()=>{try{const r=await fetch('/mdl/'+path);if(!r.ok)return;const buf=await r.arrayBuffer();let tb=null;
+   if(new DataView(buf).getInt32(180,true)===0){const r2=await fetch('/mdl/'+path.replace(/\.mdl$/i,'T.mdl'));if(r2.ok)tb=await r2.arrayBuffer()}
+   const M=mdlParse(buf,tb);M.gltex=M.tex.map(t=>{const x=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,x);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,t.w,t.h,0,gl.RGBA,gl.UNSIGNED_BYTE,t.rgba);
+    gl.generateMipmap(gl.TEXTURE_2D);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);return x});
+   M.buf=gl.createBuffer();e.M=M}catch(err){console.log('model '+path+': '+err.message)}})();return null}
+// draw a posed model; X maps model space to world: [ox,oy,oz, fx,fy,fz, lx,ly,lz, ux,uy,uz]
+function mdlDraw(M,bones,X,vp,tint){const data=[],batches=[];
+ for(const part of M.parts)for(const mesh of part.meshes){const start=data.length/8;
+  for(const[vi,ni,s,t]of mesh.tris){const b=bones[part.vb[vi]]||bones[0],v=[part.vp[vi*3],part.vp[vi*3+1],part.vp[vi*3+2]],nb=bones[part.nb[ni]]||b,n=[part.np[ni*3],part.np[ni*3+1],part.np[ni*3+2]];
+   const mx=b[0]*v[0]+b[1]*v[1]+b[2]*v[2]+b[3],my=b[4]*v[0]+b[5]*v[1]+b[6]*v[2]+b[7],mz=b[8]*v[0]+b[9]*v[1]+b[10]*v[2]+b[11];
+   const nx=nb[0]*n[0]+nb[1]*n[1]+nb[2]*n[2],ny=nb[4]*n[0]+nb[5]*n[1]+nb[6]*n[2],nz=nb[8]*n[0]+nb[9]*n[1]+nb[10]*n[2];
+   data.push(X[0]+mx*X[3]+my*X[6]+mz*X[9],X[1]+mx*X[4]+my*X[7]+mz*X[10],X[2]+mx*X[5]+my*X[8]+mz*X[11],
+     nx*X[3]+ny*X[6]+nz*X[9],nx*X[4]+ny*X[7]+nz*X[10],nx*X[5]+ny*X[8]+nz*X[11],s,t)}
+  batches.push({tex:mesh.tex,start,n:data.length/8-start})}
+ gl.useProgram(sprog);gl.bindBuffer(gl.ARRAY_BUFFER,M.buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.STREAM_DRAW);
+ for(const a of[0,1,2,3,4,5,6,7])gl.disableVertexAttribArray(a);
+ gl.enableVertexAttribArray(sPos);gl.vertexAttribPointer(sPos,3,gl.FLOAT,false,32,0);gl.enableVertexAttribArray(sNor);gl.vertexAttribPointer(sNor,3,gl.FLOAT,false,32,12);
+ gl.enableVertexAttribArray(sUv);gl.vertexAttribPointer(sUv,2,gl.FLOAT,false,32,24);
+ gl.uniformMatrix4fv(sVP,false,vp);gl.uniform4f(sTint,...(tint||[0,0,0,0]));gl.activeTexture(gl.TEXTURE0);gl.uniform1i(sTex,0);
+ for(const b of batches){const t=M.tex[b.tex];gl.bindTexture(gl.TEXTURE_2D,M.gltex[b.tex]);gl.uniform1f(sCut,t&&t.masked?1:0);gl.drawArrays(gl.TRIANGLES,b.start,b.n)}
+ gl.disableVertexAttribArray(sPos);gl.disableVertexAttribArray(sNor);gl.disableVertexAttribArray(sUv)}
+// ---- CS player: gait (legs) + aim (upper body) like the game's renderer ----
+const CT_MODELS=['urban','gsg9','sas','gign','vip'],T_MODELS=['terror','leet','arctic','guerilla'];
+function otherTeam(m){const i=CT_MODELS.indexOf(m);if(i>=0)return T_MODELS[Math.min(i,3)];const j=T_MODELS.indexOf(m);return j>=0?CT_MODELS[j]:'terror'}
+function weaponExt(p){const w=(p||'').replace(/^p_/,'');
+ if(w==='knife')return'knife';if(/^(usp|glock18|deagle|p228|fiveseven)$/.test(w))return'onehanded';if(w==='elite')return'dualpistols';
+ if(/^(scout|awp|g3sg1|sg550)$/.test(w))return'rifle';if(w==='ak47')return'ak47';if(/^(m4a1|famas|galil)$/.test(w))return'rifle';if(w==='m249')return'm249';
+ if(/^(m3|xm1014)$/.test(w))return'shotgun';if(/^(aug|sg552)$/.test(w))return'carbine';if(/grenade|flashbang/.test(w))return'grenade';if(w==='c4')return'c4';return w?'mp5':'onehanded'}
+// st: {org:[x,y,z], yaw, pitch, ducked, onGround, speed, air (s since take-off), t (s)}
+function drawPlayer(model,weapon,st,vp,tint){const M=mdlGet('player/'+model+'/'+model+'.mdl');if(!M)return false;
+ const ext=weaponExt(weapon),pre=st.ducked?'crouch_aim_':'ref_aim_';let up=mdlSeq(M,pre+ext);if(up<0)up=mdlSeq(M,pre+'onehanded');if(up<0)up=0;
+ let gait,gf;if(!st.onGround){gait=mdlSeq(M,'jump');gf=st.air*M.seqs[gait].fps}
+ else if(st.ducked){gait=mdlSeq(M,st.speed>5?'crouchrun':'crouch_idle');const s=M.seqs[gait];gf=s.lin[0]>0?(st.dist/s.lin[0]*(s.frames-1)):st.t*s.fps}
+ else{gait=mdlSeq(M,st.speed>135?'run':st.speed>5?'walk':'idle1');const s=M.seqs[gait];gf=s.lin[0]>0?(st.dist/s.lin[0]*(s.frames-1)):st.t*s.fps}
+ if(gait<0)gait=0;const gs=M.seqs[gait],loop=st.onGround;gf=loop?gf%(gs.frames-1||1):Math.min(gf,gs.frames-1);
+ const blend=Math.max(0,Math.min(1,(st.pitch+90)/180));
+ const P=mdlPose(M,up,0,blend),G=mdlPose(M,gait,gf,0);
+ // legs and pelvis from the gait sequence (bones before "Bip01 Spine")
+ for(let b=0;b<M.bones.length;b++){if(M.bones[b].name==='Bip01 Spine')break;P.P[b]=G.P[b];P.Q[b]=G.Q[b]}
+ const bones=mdlBones(M,P),y=st.yaw*Math.PI/180,X=[st.org[0],st.org[1],st.org[2],Math.cos(y),Math.sin(y),0,-Math.sin(y),Math.cos(y),0,0,0,1];
+ mdlDraw(M,bones,X,vp,tint);
+ if(weapon){const W=mdlGet(weapon+'.mdl');if(W){const map=new Map();M.bones.forEach((b,i)=>map.set(b.name,bones[i]));
+   const wb=mdlBones(W,mdlPose(W,0,0,0),map);mdlDraw(W,wb,X,vp,tint)}}
+ return true}
+function drawViewModel(name,eye,pitch,yaw,t,vp){const M=mdlGet(name+'.mdl');if(!M)return;let s=mdlSeq(M,'idle');if(s<0)s=mdlSeq(M,'idle1');if(s<0)s=0;
+ const q=M.seqs[s],f=(t*q.fps)%Math.max(1,q.frames-1),bones=mdlBones(M,mdlPose(M,s,f,0)),d=dirs(pitch,yaw,0);
+ mdlDraw(M,bones,[eye[0],eye[1],eye[2],d.f[0],d.f[1],d.f[2],-d.r[0],-d.r[1],-d.r[2],d.u[0],d.u[1],d.u[2]],vp)}
+
 let gprog,gbuf,gVP,gOff,gScl,gCol;
 function initGhost(){const vs=`#version 300 es
 in vec3 p;uniform mat4 vp;uniform vec3 off;uniform vec3 scl;void main(){gl_Position=vp*vec4(p*scl+off,1.0);}`;
@@ -342,6 +468,17 @@ precision highp float;uniform vec4 col;out vec4 o;void main(){o=col;}`;
 function sampleR(r,tf){const n=r.d.length/9,i=Math.max(0,Math.min(n-2,Math.floor(tf))),u=Math.max(0,Math.min(1,tf-i)),a=i*9,b=(i+1)*9,d=r.d;
  const lerp=(x,y)=>x+(y-x)*u,ang=(x,y)=>{let q=y-x;while(q>180)q-=360;while(q<-180)q+=360;return x+q*u};
  return {eye:[lerp(d[a],d[b]),lerp(d[a+1],d[b+1]),lerp(d[a+2],d[b+2])],p:ang(d[a+3],d[b+3]),y:ang(d[a+4],d[b+4]),btn:d[a+6],spd:lerp(d[a+7],d[b+7]),og:d[a+8],i}}
+
+// model / weapon at a replay frame: lists are [frame, name] changes of the real replay
+function listAt(L,k){let v='';if(!L)return v;for(const e of L){if(e[0]>k)break;v=e[1]}return v}
+function realIdx(r,tf){return r===J.replay?tf:J.replay.t0+(tf-r.t0)}
+function playerState(r,tf){const s=sampleR(r,tf),d=r.d,n=d.length/9;
+ if(!r._cum){r._cum=new Float32Array(n);r._lg=new Int32Array(n);let lg=0;for(let k=0;k<n;k++){if(k)r._cum[k]=r._cum[k-1]+Math.hypot(d[k*9]-d[(k-1)*9],d[k*9+1]-d[(k-1)*9+1]);if(d[k*9+8])lg=k;r._lg[k]=lg}}
+ const i=Math.max(0,Math.min(n-1,Math.floor(tf))),ri=Math.round(realIdx(r,tf)),du=J.replay.duck;
+ const ducked=!!(s.btn&4)||!!(r===J.replay&&du&&du[i]);
+ return{s,org:[s.eye[0],s.eye[1],s.eye[2]-(ducked?12:17)],yaw:s.y,pitch:s.p,ducked,onGround:!!s.og,speed:s.spd,dist:r._cum[i],air:(i-r._lg[i])/100,t:tf/100,
+  weapon:listAt(J.replay.pmodel,ri),vmodel:listAt(J.replay.vmodel,ri)}}
+function modelFor(r){const m=(J.replay.player||'').toLowerCase()||'urban';return r===J.replay?m:otherTeam(m)}
 function setReplay(keep){
  const wi=$('rmode').value==='wi'&&WI;const off=rp?t-rp.t0:-100;
  rp=wi?{d:WI.replay.d,t0:WI.replay.t0,t1:WI.replay.t1,map:WI.replay.map,ents:WI.replay.ents}:J.replay;
@@ -374,13 +511,18 @@ function render(){
   gl.enableVertexAttribArray(aPos);gl.vertexAttribPointer(aPos,3,gl.FLOAT,false,28,0);gl.enableVertexAttribArray(aUv);gl.vertexAttribPointer(aUv,2,gl.FLOAT,false,28,12);gl.enableVertexAttribArray(aLm);gl.vertexAttribPointer(aLm,2,gl.FLOAT,false,28,20);
   gl.uniform1f(uAlpha,b.alpha);gl.uniform1f(uWater,b.water?1:0);gl.uniform1f(uCut,b.cut);gl.depthMask(b.alpha>=1&&!b.water);gl.drawArrays(gl.TRIANGLES,0,b.n)}
  gl.depthMask(true);
- if(other&&$('gh').checked){const so=sampleR(other,other.t0+(t-rp.t0));const dk=(so.btn&4)?12:17;
+ const pmode=$('rplayer').value,useM=pmode!=='box';
+ if(other&&$('gh').checked&&useM&&drawPlayer(modelFor(other),playerState(other,other.t0+(t-rp.t0)).weapon,playerState(other,other.t0+(t-rp.t0)),vp)){}
+ else if(other&&$('gh').checked){const so=sampleR(other,other.t0+(t-rp.t0));const dk=(so.btn&4)?12:17;
   gl.useProgram(gprog);gl.disableVertexAttribArray(aUv);gl.disableVertexAttribArray(aLm);gl.bindBuffer(gl.ARRAY_BUFFER,gbuf);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
   gl.uniformMatrix4fv(gVP,false,vp);gl.uniform3f(gOff,so.eye[0],so.eye[1],so.eye[2]-dk);gl.uniform3f(gScl,1,1,dk===12?18:36);
   const wiMode=$('rmode').value==='wi';gl.uniform4f(gCol,...(wiMode?[0.95,0.6,0.2,0.4]:[0.6,0.4,1.0,0.45]));gl.depthMask(false);gl.drawArrays(gl.TRIANGLES,0,36);gl.depthMask(true)}
- if(cam!=='fp'){gl.useProgram(gprog);gl.disableVertexAttribArray(aUv);gl.disableVertexAttribArray(aLm);gl.bindBuffer(gl.ARRAY_BUFFER,gbuf);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
+ const me=playerState(rp,t);let drewMe=false;if(cam!=='fp'&&useM)drewMe=drawPlayer(modelFor(rp),me.weapon,me,vp);
+ if(cam!=='fp'&&(!drewMe||pmode==='both')){gl.useProgram(gprog);gl.disableVertexAttribArray(aUv);gl.disableVertexAttribArray(aLm);gl.bindBuffer(gl.ARRAY_BUFFER,gbuf);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
   gl.uniformMatrix4fv(gVP,false,vp);gl.uniform3f(gOff,ctr[0],ctr[1],ctr[2]);gl.uniform3f(gScl,1,1,dk0===12?18:36);
   gl.uniform4f(gCol,...(s.og?[0.15,1.0,0.55,0.55]:[1.0,0.6,0.2,0.55]));gl.depthMask(false);gl.drawArrays(gl.TRIANGLES,0,36);gl.depthMask(true)}
+ if(cam==='fp'){const vm=$('rvm').value;let v=me.vmodel;if(vm==='show'&&!v)v=me.weapon?me.weapon.replace(/^p_/,'v_'):'v_knife';if(vm==='hide')v='';
+  if(v){gl.clear(gl.DEPTH_BUFFER_BIT);const f0=fov;fov=90;const vvp=viewProj(s.eye,s.p,s.y,0,w/h);fov=f0;drawViewModel(v,s.eye,s.p,s.y,t/100,vvp)}}
  hx.font='600 34px system-ui';hx.textAlign='center';hx.fillStyle='#fff';hx.shadowColor='#000';hx.shadowBlur=6;hx.fillText(Math.round(s.spd),w/2,h-46);hx.font='12px system-ui';hx.fillText('units/s',w/2,h-28);
  const B=s.btn,keys=[['W',8,1,0],['A',512,0,1],['S',16,1,1],['D',1024,2,1]],bx=24,by=h-92;hx.shadowBlur=0;hx.font='600 13px system-ui';
  const key=(lab,on,x,y,wd)=>{hx.fillStyle=on?'rgba(255,169,77,.95)':'rgba(0,0,0,.45)';hx.fillRect(x,y,wd,30);hx.fillStyle=on?'#000':'#fff';hx.fillText(lab,x+wd/2,y+20)};
@@ -392,14 +534,14 @@ function render(){
    :[(J.landed?'':'FAILED ')+J.type,'Distance '+J.dist.toFixed(3),'Maxspeed '+J.max.toFixed(1)+' (+'+J.gainTotal.toFixed(1)+')','Prestrafe '+J.pre.toFixed(3),'Strafes '+J.strafes.length+'  Eff '+J.eff.toFixed(0)+'%','Jumpoff '+fx(J.jumpoff)];
   hx.shadowBlur=0;hx.fillStyle='rgba(0,0,0,.55)';hx.fillRect(w-250,14,236,L.length*20+14);hx.textAlign='left';hx.font='13px ui-monospace,monospace';
   L.forEach((q,k)=>{hx.fillStyle=k===0?(wiMode?'#b794ff':(J.landed?'rgb(20,255,150)':'rgb(255,70,120)')):'rgb(20,255,150)';hx.fillText(q,w-240,36+k*20)})}
- $('rs').value=Math.round(t*10);drawTL()}
+ $('rs').value=Math.round(t*10);if(document.fullscreenElement){const S=$('fss');S.max=$('rs').max;S.value=$('rs').value;$('fsp').textContent=$('rp').textContent}drawTL()}
 function loop(now){if(playing&&rp){const dt=Math.min(0.05,(now-last)/1000);t+=dt*100*speed;const n=rp.d.length/9;if(t>=n-1){t=n-1;playing=false;$('rp').textContent='Play'}}last=now;render();requestAnimationFrame(loop)}
 async function loadMap(name){mapName=name;msg.textContent='Loading map '+name+' ...';msg.style.display='block';
  try{const r=await fetch('/map/'+encodeURIComponent(name)+'.bsp');if(!r.ok)throw new Error('not found');useBuf(await r.arrayBuffer())}
  catch(e){msg.innerHTML='Map <b>'+name+'.bsp</b> was not found. Put it next to DEMviewer.exe or the demos, or pick it here: <input type="file" id="rf" accept=".bsp">';
   $('rf').onchange=async ev=>{const f=ev.target.files[0];if(f)useBuf(await f.arrayBuffer())}}}
 function useBuf(buf){try{bsp=parseBSP(buf);scene=buildScene(bsp);upload(scene);msg.style.display='none'}catch(e){msg.textContent='Could not read map: '+e.message;msg.style.display='block'}}
-if(!gl){msg.textContent='3D view needs WebGL2.';msg.style.display='block'}else{try{initGL();initGhost()}catch(e){msg.textContent='3D view not available: '+e.message;msg.style.display='block'}}
+if(!gl){msg.textContent='3D view needs WebGL2.';msg.style.display='block'}else{try{initGL();initGhost();initStudioGL()}catch(e){msg.textContent='3D view not available: '+e.message;msg.style.display='block'}}
 $('rp').onclick=()=>{if(!rp)return;if(playing){playing=false;$('rp').textContent='Play';return}if(t>=rp.d.length/9-2)t=Math.max(0,rp.t0-100);playing=true;$('rp').textContent='Pause';last=performance.now()};
 $('rs').oninput=e=>{t=e.target.value/10;playing=false;$('rp').textContent='Play'};
 $('rv').onchange=e=>{speed=+e.target.value};$('rcam').onchange=()=>{};$('rf2').oninput=e=>{fov=+e.target.value;$('rfl').textContent=fov};
@@ -505,5 +647,13 @@ function cvarBoxes(){const C=J.cvars||[];if(!C.length)return'';const bad=C.filte
  let h=`<div class="stat" title="${esc(tip)}" style="cursor:help"><b style="color:${bad.length?'var(--bad)':'var(--land)'}">${bad.length?'✗ not legal':'✓ legal'}</b><span>settings · ${chk.length} checked${unk.length?', '+unk.length+' not in demo':''} · hover for list</span></div>`;
  if(bad.length)h+=`<div class="stat" style="border-color:var(--bad)"><b style="color:var(--bad);font-size:15px">${bad.map(c=>esc(c.name)).join(', ')}</b><span>${bad.map(c=>esc(c.name)+' '+esc(c.value)+' (legal '+esc(c.legal)+')').join(' · ')}</span></div>`;
  return h}
+
+$('rfs').onclick=()=>{const el=$('rc').parentElement;if(document.fullscreenElement)document.exitFullscreen();else (el.requestFullscreen||el.webkitRequestFullscreen).call(el)};
+document.addEventListener('fullscreenchange',()=>{const fs=!!document.fullscreenElement;$('rc').style.height=fs?'100vh':'540px';$('rfs').textContent=fs?'Exit fullscreen':'Fullscreen';
+ $('fsbar').style.display=fs?'flex':'none';$('fsv').value=$('rv').value});
+// controls shown on top of the replay in fullscreen: they drive the normal ones
+$('fsp').onclick=()=>$('rp').click();$('fst').onclick=()=>$('rt').click();
+$('fsv').onchange=e=>{$('rv').value=e.target.value;$('rv').dispatchEvent(new Event('change'))};
+$('fss').oninput=e=>{$('rs').value=e.target.value;$('rs').dispatchEvent(new Event('input'))};
 
 </script></body></html>

@@ -5,11 +5,12 @@ const fx=(v,d=3)=>v==null||isNaN(v)?'—':v.toFixed(d);
 let STATE=null,J=null,WI=null,sel=null,SORT={k:'dist',d:1};
 try{const s=JSON.parse(localStorage.getItem('dvSort')||'null');if(s&&s.k)SORT=s}catch(e){}
 
-async function loadState(){const r=await fetch('/api/state');STATE=await r.json();if(STATE.version)$('ver').textContent='· v'+STATE.version.replace(/^v/,'');$('folder').value=STATE.folder||'';$('mapsdir').value=STATE.mapsFolder||'';renderRank()}
+async function loadState(){const r=await fetch('/api/state');STATE=await r.json();if(STATE.version)$('ver').textContent='· v'+STATE.version.replace(/^v/,'');$('folder').value=STATE.folder||'';$('mapsdir').value=STATE.mapsFolder||'';$('mdldir').value=STATE.modelsFolder||'';renderRank()}
 async function browse(kind){const r=await fetch('/api/browse?kind='+kind);if(!r.ok){alertBox(await r.text());return}const x=await r.json();if(x.cancelled)return;
  await loadState();if(kind==='demo'&&x.file){const hs=STATE.jumps.filter(j=>j.name===x.file||j.name.endsWith('\\'+x.file)||j.name.endsWith('/'+x.file)),hit=hs.find(j=>j.main)||hs[0];if(hit)openJump(hit.d,hit.j);else alertBox('No long jumps found in '+x.file)}
- else if(J&&kind==='maps'){openJump(J._d,J._j)}}
-$('bfolder').onclick=()=>browse('folder');$('bdemo').onclick=()=>browse('demo');$('bmaps').onclick=()=>browse('maps');
+ else if(J&&kind==='maps'){openJump(J._d,J._j)}
+ else if(kind==='models'){MDL.cache.clear()}}
+$('bfolder').onclick=()=>browse('folder');$('bdemo').onclick=()=>browse('demo');$('bmaps').onclick=()=>browse('maps');$('bmdl').onclick=()=>browse('models');
 function renderRank(){
  const types=[...new Set(STATE.jumps.map(x=>x.type))].sort(),tf0=$('tfilt').value;
  $('tfilt').innerHTML='<option value="all">all types</option>'+types.map(x=>`<option${x===tf0?' selected':''}>${x}</option>`).join('');
@@ -107,6 +108,7 @@ addEventListener('resize',()=>{drawCharts();TL.cache=null});
 const RC=$('rc'),HUD=$('rh'),msg=$('rmsg');const gl=RC.getContext('webgl2',{antialias:true});
 let entKey='',fov=100,t=0,speed=0.25,playing=false,last=0,scene=null,bsp=null,mapName=null,rp=null,other=null;
 __RENDERER__
+__STUDIO__
 let gprog,gbuf,gVP,gOff,gScl,gCol;
 function initGhost(){const vs=`#version 300 es
 in vec3 p;uniform mat4 vp;uniform vec3 off;uniform vec3 scl;void main(){gl_Position=vp*vec4(p*scl+off,1.0);}`;
@@ -121,6 +123,17 @@ precision highp float;uniform vec4 col;out vec4 o;void main(){o=col;}`;
 function sampleR(r,tf){const n=r.d.length/9,i=Math.max(0,Math.min(n-2,Math.floor(tf))),u=Math.max(0,Math.min(1,tf-i)),a=i*9,b=(i+1)*9,d=r.d;
  const lerp=(x,y)=>x+(y-x)*u,ang=(x,y)=>{let q=y-x;while(q>180)q-=360;while(q<-180)q+=360;return x+q*u};
  return {eye:[lerp(d[a],d[b]),lerp(d[a+1],d[b+1]),lerp(d[a+2],d[b+2])],p:ang(d[a+3],d[b+3]),y:ang(d[a+4],d[b+4]),btn:d[a+6],spd:lerp(d[a+7],d[b+7]),og:d[a+8],i}}
+
+// model / weapon at a replay frame: lists are [frame, name] changes of the real replay
+function listAt(L,k){let v='';if(!L)return v;for(const e of L){if(e[0]>k)break;v=e[1]}return v}
+function realIdx(r,tf){return r===J.replay?tf:J.replay.t0+(tf-r.t0)}
+function playerState(r,tf){const s=sampleR(r,tf),d=r.d,n=d.length/9;
+ if(!r._cum){r._cum=new Float32Array(n);r._lg=new Int32Array(n);let lg=0;for(let k=0;k<n;k++){if(k)r._cum[k]=r._cum[k-1]+Math.hypot(d[k*9]-d[(k-1)*9],d[k*9+1]-d[(k-1)*9+1]);if(d[k*9+8])lg=k;r._lg[k]=lg}}
+ const i=Math.max(0,Math.min(n-1,Math.floor(tf))),ri=Math.round(realIdx(r,tf)),du=J.replay.duck;
+ const ducked=!!(s.btn&4)||!!(r===J.replay&&du&&du[i]);
+ return{s,org:[s.eye[0],s.eye[1],s.eye[2]-(ducked?12:17)],yaw:s.y,pitch:s.p,ducked,onGround:!!s.og,speed:s.spd,dist:r._cum[i],air:(i-r._lg[i])/100,t:tf/100,
+  weapon:listAt(J.replay.pmodel,ri),vmodel:listAt(J.replay.vmodel,ri)}}
+function modelFor(r){const m=(J.replay.player||'').toLowerCase()||'urban';return r===J.replay?m:otherTeam(m)}
 function setReplay(keep){
  const wi=$('rmode').value==='wi'&&WI;const off=rp?t-rp.t0:-100;
  rp=wi?{d:WI.replay.d,t0:WI.replay.t0,t1:WI.replay.t1,map:WI.replay.map,ents:WI.replay.ents}:J.replay;
@@ -153,13 +166,18 @@ function render(){
   gl.enableVertexAttribArray(aPos);gl.vertexAttribPointer(aPos,3,gl.FLOAT,false,28,0);gl.enableVertexAttribArray(aUv);gl.vertexAttribPointer(aUv,2,gl.FLOAT,false,28,12);gl.enableVertexAttribArray(aLm);gl.vertexAttribPointer(aLm,2,gl.FLOAT,false,28,20);
   gl.uniform1f(uAlpha,b.alpha);gl.uniform1f(uWater,b.water?1:0);gl.uniform1f(uCut,b.cut);gl.depthMask(b.alpha>=1&&!b.water);gl.drawArrays(gl.TRIANGLES,0,b.n)}
  gl.depthMask(true);
- if(other&&$('gh').checked){const so=sampleR(other,other.t0+(t-rp.t0));const dk=(so.btn&4)?12:17;
+ const pmode=$('rplayer').value,useM=pmode!=='box';
+ if(other&&$('gh').checked&&useM&&drawPlayer(modelFor(other),playerState(other,other.t0+(t-rp.t0)).weapon,playerState(other,other.t0+(t-rp.t0)),vp)){}
+ else if(other&&$('gh').checked){const so=sampleR(other,other.t0+(t-rp.t0));const dk=(so.btn&4)?12:17;
   gl.useProgram(gprog);gl.disableVertexAttribArray(aUv);gl.disableVertexAttribArray(aLm);gl.bindBuffer(gl.ARRAY_BUFFER,gbuf);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
   gl.uniformMatrix4fv(gVP,false,vp);gl.uniform3f(gOff,so.eye[0],so.eye[1],so.eye[2]-dk);gl.uniform3f(gScl,1,1,dk===12?18:36);
   const wiMode=$('rmode').value==='wi';gl.uniform4f(gCol,...(wiMode?[0.95,0.6,0.2,0.4]:[0.6,0.4,1.0,0.45]));gl.depthMask(false);gl.drawArrays(gl.TRIANGLES,0,36);gl.depthMask(true)}
- if(cam!=='fp'){gl.useProgram(gprog);gl.disableVertexAttribArray(aUv);gl.disableVertexAttribArray(aLm);gl.bindBuffer(gl.ARRAY_BUFFER,gbuf);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
+ const me=playerState(rp,t);let drewMe=false;if(cam!=='fp'&&useM)drewMe=drawPlayer(modelFor(rp),me.weapon,me,vp);
+ if(cam!=='fp'&&(!drewMe||pmode==='both')){gl.useProgram(gprog);gl.disableVertexAttribArray(aUv);gl.disableVertexAttribArray(aLm);gl.bindBuffer(gl.ARRAY_BUFFER,gbuf);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
   gl.uniformMatrix4fv(gVP,false,vp);gl.uniform3f(gOff,ctr[0],ctr[1],ctr[2]);gl.uniform3f(gScl,1,1,dk0===12?18:36);
   gl.uniform4f(gCol,...(s.og?[0.15,1.0,0.55,0.55]:[1.0,0.6,0.2,0.55]));gl.depthMask(false);gl.drawArrays(gl.TRIANGLES,0,36);gl.depthMask(true)}
+ if(cam==='fp'){const vm=$('rvm').value;let v=me.vmodel;if(vm==='show'&&!v)v=me.weapon?me.weapon.replace(/^p_/,'v_'):'v_knife';if(vm==='hide')v='';
+  if(v){gl.clear(gl.DEPTH_BUFFER_BIT);const f0=fov;fov=90;const vvp=viewProj(s.eye,s.p,s.y,0,w/h);fov=f0;drawViewModel(v,s.eye,s.p,s.y,t/100,vvp)}}
  hx.font='600 34px system-ui';hx.textAlign='center';hx.fillStyle='#fff';hx.shadowColor='#000';hx.shadowBlur=6;hx.fillText(Math.round(s.spd),w/2,h-46);hx.font='12px system-ui';hx.fillText('units/s',w/2,h-28);
  const B=s.btn,keys=[['W',8,1,0],['A',512,0,1],['S',16,1,1],['D',1024,2,1]],bx=24,by=h-92;hx.shadowBlur=0;hx.font='600 13px system-ui';
  const key=(lab,on,x,y,wd)=>{hx.fillStyle=on?'rgba(255,169,77,.95)':'rgba(0,0,0,.45)';hx.fillRect(x,y,wd,30);hx.fillStyle=on?'#000':'#fff';hx.fillText(lab,x+wd/2,y+20)};
@@ -171,14 +189,14 @@ function render(){
    :[(J.landed?'':'FAILED ')+J.type,'Distance '+J.dist.toFixed(3),'Maxspeed '+J.max.toFixed(1)+' (+'+J.gainTotal.toFixed(1)+')','Prestrafe '+J.pre.toFixed(3),'Strafes '+J.strafes.length+'  Eff '+J.eff.toFixed(0)+'%','Jumpoff '+fx(J.jumpoff)];
   hx.shadowBlur=0;hx.fillStyle='rgba(0,0,0,.55)';hx.fillRect(w-250,14,236,L.length*20+14);hx.textAlign='left';hx.font='13px ui-monospace,monospace';
   L.forEach((q,k)=>{hx.fillStyle=k===0?(wiMode?'#b794ff':(J.landed?'rgb(20,255,150)':'rgb(255,70,120)')):'rgb(20,255,150)';hx.fillText(q,w-240,36+k*20)})}
- $('rs').value=Math.round(t*10);drawTL()}
+ $('rs').value=Math.round(t*10);if(document.fullscreenElement){const S=$('fss');S.max=$('rs').max;S.value=$('rs').value;$('fsp').textContent=$('rp').textContent}drawTL()}
 function loop(now){if(playing&&rp){const dt=Math.min(0.05,(now-last)/1000);t+=dt*100*speed;const n=rp.d.length/9;if(t>=n-1){t=n-1;playing=false;$('rp').textContent='Play'}}last=now;render();requestAnimationFrame(loop)}
 async function loadMap(name){mapName=name;msg.textContent='Loading map '+name+' ...';msg.style.display='block';
  try{const r=await fetch('/map/'+encodeURIComponent(name)+'.bsp');if(!r.ok)throw new Error('not found');useBuf(await r.arrayBuffer())}
  catch(e){msg.innerHTML='Map <b>'+name+'.bsp</b> was not found. Put it next to DEMviewer.exe or the demos, or pick it here: <input type="file" id="rf" accept=".bsp">';
   $('rf').onchange=async ev=>{const f=ev.target.files[0];if(f)useBuf(await f.arrayBuffer())}}}
 function useBuf(buf){try{bsp=parseBSP(buf);scene=buildScene(bsp);upload(scene);msg.style.display='none'}catch(e){msg.textContent='Could not read map: '+e.message;msg.style.display='block'}}
-if(!gl){msg.textContent='3D view needs WebGL2.';msg.style.display='block'}else{try{initGL();initGhost()}catch(e){msg.textContent='3D view not available: '+e.message;msg.style.display='block'}}
+if(!gl){msg.textContent='3D view needs WebGL2.';msg.style.display='block'}else{try{initGL();initGhost();initStudioGL()}catch(e){msg.textContent='3D view not available: '+e.message;msg.style.display='block'}}
 $('rp').onclick=()=>{if(!rp)return;if(playing){playing=false;$('rp').textContent='Play';return}if(t>=rp.d.length/9-2)t=Math.max(0,rp.t0-100);playing=true;$('rp').textContent='Pause';last=performance.now()};
 $('rs').oninput=e=>{t=e.target.value/10;playing=false;$('rp').textContent='Play'};
 $('rv').onchange=e=>{speed=+e.target.value};$('rcam').onchange=()=>{};$('rf2').oninput=e=>{fov=+e.target.value;$('rfl').textContent=fov};
@@ -284,3 +302,11 @@ function cvarBoxes(){const C=J.cvars||[];if(!C.length)return'';const bad=C.filte
  let h=`<div class="stat" title="${esc(tip)}" style="cursor:help"><b style="color:${bad.length?'var(--bad)':'var(--land)'}">${bad.length?'✗ not legal':'✓ legal'}</b><span>settings · ${chk.length} checked${unk.length?', '+unk.length+' not in demo':''} · hover for list</span></div>`;
  if(bad.length)h+=`<div class="stat" style="border-color:var(--bad)"><b style="color:var(--bad);font-size:15px">${bad.map(c=>esc(c.name)).join(', ')}</b><span>${bad.map(c=>esc(c.name)+' '+esc(c.value)+' (legal '+esc(c.legal)+')').join(' · ')}</span></div>`;
  return h}
+
+$('rfs').onclick=()=>{const el=$('rc').parentElement;if(document.fullscreenElement)document.exitFullscreen();else (el.requestFullscreen||el.webkitRequestFullscreen).call(el)};
+document.addEventListener('fullscreenchange',()=>{const fs=!!document.fullscreenElement;$('rc').style.height=fs?'100vh':'540px';$('rfs').textContent=fs?'Exit fullscreen':'Fullscreen';
+ $('fsbar').style.display=fs?'flex':'none';$('fsv').value=$('rv').value});
+// controls shown on top of the replay in fullscreen: they drive the normal ones
+$('fsp').onclick=()=>$('rp').click();$('fst').onclick=()=>$('rt').click();
+$('fsv').onchange=e=>{$('rv').value=e.target.value;$('rv').dispatchEvent(new Event('change'))};
+$('fss').oninput=e=>{$('rs').value=e.target.value;$('rs').dispatchEvent(new Event('input'))};

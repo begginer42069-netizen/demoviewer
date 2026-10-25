@@ -34,34 +34,34 @@ type demoEntry struct {
 }
 
 type jumpSummary struct {
-	Demo     int      `json:"d"`
-	Jump     int      `json:"j"`
-	Name     string   `json:"name"`
-	Map      string   `json:"map"`
-	Type     string   `json:"type"`
-	Style    string   `json:"style"`
-	Plugin   string   `json:"pluginType"`
-	Result   string   `json:"result"`
-	Dist     float64  `json:"dist"`
-	Pre      float64  `json:"pre"`
-	Jumpoff  *float64 `json:"jumpoff"`
-	Block    *float64 `json:"block"`
-	LandEdge *float64 `json:"landEdge"`
-	Strafes  int      `json:"strafes"`
-	Eff      float64  `json:"eff"`
-	Max      float64  `json:"max"`
-	Slaps    int      `json:"slaps"`
-	OneSlaps int      `json:"oneFrameSlaps"`
-	SlapScore float64 `json:"slapScore"`
-	Main      bool    `json:"main"`
-	Time      float64 `json:"time"`
+	Demo      int      `json:"d"`
+	Jump      int      `json:"j"`
+	Name      string   `json:"name"`
+	Map       string   `json:"map"`
+	Type      string   `json:"type"`
+	Style     string   `json:"style"`
+	Plugin    string   `json:"pluginType"`
+	Result    string   `json:"result"`
+	Dist      float64  `json:"dist"`
+	Pre       float64  `json:"pre"`
+	Jumpoff   *float64 `json:"jumpoff"`
+	Block     *float64 `json:"block"`
+	LandEdge  *float64 `json:"landEdge"`
+	Strafes   int      `json:"strafes"`
+	Eff       float64  `json:"eff"`
+	Max       float64  `json:"max"`
+	Slaps     int      `json:"slaps"`
+	OneSlaps  int      `json:"oneFrameSlaps"`
+	SlapScore float64  `json:"slapScore"`
+	Main      bool     `json:"main"`
+	Time      float64  `json:"time"`
 }
 
 var (
-	mu      sync.Mutex
-	folder  string
-	demos   []*demoEntry
-	cache   = map[string]*demoEntry{}
+	mu     sync.Mutex
+	folder string
+	demos  []*demoEntry
+	cache  = map[string]*demoEntry{}
 )
 
 func exeDir() string {
@@ -221,7 +221,7 @@ func main() {
 		}
 		f := folder
 		mu.Unlock()
-		writeJSON(w, map[string]any{"version": version, "folder": f, "mapsFolder": settings.MapsFolder, "demos": ds, "jumps": summaries()})
+		writeJSON(w, map[string]any{"version": version, "folder": f, "mapsFolder": settings.MapsFolder, "modelsFolder": modelsDir(), "demos": ds, "jumps": summaries()})
 	})
 	mux.HandleFunc("/api/folder", func(w http.ResponseWriter, r *http.Request) {
 		var req struct{ Path string }
@@ -246,6 +246,12 @@ func main() {
 		switch kind {
 		case "demo":
 			p, err = browseDialog("demo", "Open a demo", start)
+		case "models":
+			s := modelsDir()
+			if s == "" {
+				s = start
+			}
+			p, err = browseDialog("folder", "Choose your cstrike\\models folder (player and weapon models)", s)
 		case "maps":
 			s := settings.MapsFolder
 			if s == "" {
@@ -271,6 +277,9 @@ func main() {
 			settings.DemoFolder = dir
 			saveSettings()
 			resp["file"] = filepath.Base(p)
+		case "models":
+			settings.ModelsFolder = p
+			saveSettings()
 		case "maps":
 			settings.MapsFolder = p
 			saveSettings()
@@ -319,6 +328,23 @@ func main() {
 		}
 		fog, _ := strconv.Atoi(r.URL.Query().Get("fog"))
 		writeJSON(w, RunWhatIf(e.demo, j, pre, edge, fog))
+	})
+	mux.HandleFunc("/mdl/", func(w http.ResponseWriter, r *http.Request) {
+		// a model from the player's own game folder, e.g. /mdl/player/gign/gign.mdl
+		rel := filepath.Clean(strings.TrimPrefix(r.URL.Path, "/mdl/"))
+		if rel == "." || strings.HasPrefix(rel, "..") || filepath.IsAbs(rel) || !strings.HasSuffix(strings.ToLower(rel), ".mdl") {
+			http.NotFound(w, r)
+			return
+		}
+		for _, d := range modelDirs() {
+			if b, err := os.ReadFile(filepath.Join(d, rel)); err == nil {
+				w.Header().Set("Content-Type", "application/octet-stream")
+				w.Header().Set("Cache-Control", "max-age=3600")
+				w.Write(b)
+				return
+			}
+		}
+		http.NotFound(w, r)
 	})
 	mux.HandleFunc("/map/", func(w http.ResponseWriter, r *http.Request) {
 		name := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/map/"), ".bsp")
@@ -462,4 +488,39 @@ func nameType(name string) string {
 		}
 	}
 	return ""
+}
+
+// modelDirs: where player and weapon models are looked for, best first.
+func modelDirs() []string {
+	var ds []string
+	if settings.ModelsFolder != "" {
+		ds = append(ds, settings.ModelsFolder)
+	}
+	if settings.MapsFolder != "" {
+		ds = append(ds, filepath.Join(settings.MapsFolder, "..", "models"))
+	}
+	ds = append(ds, filepath.Join(exeDir(), "models"))
+	var hl []string
+	for _, drv := range []string{"C", "D", "E", "F", "G"} {
+		for _, p := range []string{`\Program Files (x86)\Steam\steamapps\common\Half-Life`, `\Program Files\Steam\steamapps\common\Half-Life`, `\SteamLibrary\steamapps\common\Half-Life`, `\Steam\steamapps\common\Half-Life`} {
+			hl = append(hl, drv+":"+p)
+		}
+	}
+	if h, err := os.UserHomeDir(); err == nil {
+		hl = append(hl, filepath.Join(h, ".steam/steam/steamapps/common/Half-Life"), filepath.Join(h, ".local/share/Steam/steamapps/common/Half-Life"))
+	}
+	for _, b := range hl {
+		ds = append(ds, filepath.Join(b, "cstrike", "models"), filepath.Join(b, "cstrike_downloads", "models"), filepath.Join(b, "valve", "models"))
+	}
+	return ds
+}
+
+// modelsDir: the first models folder that exists (shown in the UI).
+func modelsDir() string {
+	for _, d := range modelDirs() {
+		if st, err := os.Stat(filepath.Join(d, "player")); err == nil && st.IsDir() {
+			return d
+		}
+	}
+	return settings.ModelsFolder
 }

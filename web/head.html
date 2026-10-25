@@ -76,6 +76,8 @@ pre.pl{white-space:pre-wrap;font:12px ui-monospace,Consolas,monospace;margin:0 0
  <button class="primary" id="bfolder">Browse folder&hellip;</button><button id="bdemo">Open demo&hellip;</button><button id="open">Reload</button>
  <label style="flex:1;min-width:220px">Maps folder <span class="mute">(extra .bsp files, optional)</span><input type="text" id="mapsdir" readonly placeholder="built-in maps + cstrike\maps"></label>
  <button id="bmaps">Browse&hellip;</button>
+ <label style="flex:1;min-width:220px">Models folder <span class="mute">(cstrike\models, for players and weapons)</span><input type="text" id="mdldir" readonly placeholder="found automatically"></label>
+ <button id="bmdl">Browse&hellip;</button>
  <label>Show<select id="filt"><option value="main">best jumps</option><option value="all">all attempts</option><option value="LANDED">all landed</option><option value="FAILED">all failed</option></select></label>
  <label>Type<select id="tfilt"><option value="all">all types</option></select></label>
  <span class="mute small" id="cnt"></span>
@@ -89,12 +91,14 @@ pre.pl{white-space:pre-wrap;font:12px ui-monospace,Consolas,monospace;margin:0 0
   <div class="card"><h2>Recorded in the demo by the server plugins</h2><div id="plugin"></div></div>
  </div>
  <div class="card"><h2>Replay &mdash; first person in the real map</h2>
-  <div style="position:relative;background:#000;border-radius:6px;overflow:hidden"><canvas id="rc" style="width:100%;height:540px;display:block"></canvas><canvas id="rh" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none"></canvas>
+  <div style="position:relative;background:#000;border-radius:6px;overflow:hidden"><canvas id="rc" style="width:100%;height:540px;display:block"></canvas><canvas id="rh" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none"></canvas><button id="rfs" style="position:absolute;right:10px;bottom:34px;opacity:.85">Fullscreen</button><div id="fsbar" style="display:none;position:absolute;left:12px;top:12px;gap:8px;align-items:center;background:rgba(0,0,0,.55);padding:8px 10px;border-radius:8px;color:#fff;font-size:13px"><button id="fsp">Play</button><button id="fst">From take-off</button><select id="fsv"><option value="0.1">0.1x</option><option value="0.25">0.25x</option><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1">1x</option></select><input type="range" id="fss" min="0" max="100" value="0" style="width:320px"></div>
   <div id="rmsg" style="display:none;position:absolute;left:12px;top:12px;right:12px;background:rgba(0,0,0,.7);color:#fff;padding:10px 12px;border-radius:6px;font-size:13px"></div></div>
   <div class="bar" style="margin:10px 0 0"><button id="rp">Play</button><button id="rt">From take-off</button>
   <label>Show<select id="rmode"><option value="real">Real jump</option><option value="wi" disabled>What-if (simulated)</option></select></label>
   <label><span><input type="checkbox" id="gh" checked> ghost of the other run</span></label>
-  <label>Speed<select id="rv"><option value="0.1">0.1x</option><option value="0.25" selected>0.25x</option><option value="0.5">0.5x</option><option value="1">1x (real time)</option></select></label>
+  <label>Speed<select id="rv"><option value="0.1">0.1x</option><option value="0.25" selected>0.25x</option><option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1">1x (real time)</option></select></label>
+  <label>Player<select id="rplayer"><option value="model">Model (from your game)</option><option value="box">Hitbox</option><option value="both">Model + hitbox</option></select></label>
+  <label>Viewmodel<select id="rvm"><option value="demo">As in the demo</option><option value="show">Always show</option><option value="hide">Hide</option></select></label>
   <label>Camera<select id="rcam"><option value="fp">First person</option><option value="chase">Behind (shows hitbox)</option><option value="side">Side (shows hitbox)</option><option value="top">Top (shows hitbox)</option></select></label>
   <label>FOV <span id="rfl">100</span><input type="range" id="rf2" min="70" max="120" value="100"></label>
   <label style="flex:1;min-width:200px">Time<input type="range" id="rs" min="0" max="100" value="0" style="width:100%"></label></div></div>

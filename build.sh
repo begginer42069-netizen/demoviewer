@@ -5,7 +5,7 @@ set -e
 cd "$(dirname "$0")"
 VERSION="${VERSION:-dev}"
 python3 - <<'PY'
-h=open('web/head.html').read(); a=open('web/app.js').read().replace('__RENDERER__',open('web/renderer.js').read())
+h=open('web/head.html').read(); a=open('web/app.js').read().replace('__RENDERER__',open('web/renderer.js').read()).replace('__STUDIO__',open('web/studio.js').read())
 open('web/index.html','w').write(h+'<script>\n'+a+'\n</script></body></html>\n')
 PY
 export GOFLAGS=-mod=mod GOPROXY=off

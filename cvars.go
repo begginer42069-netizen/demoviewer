@@ -32,6 +32,7 @@ func parseInfo(dm *Demo, d []byte) {
 			mc, pn := int(d[p+29]), int(d[p+30])
 			if mc >= 1 && mc <= 32 && pn < mc {
 				slot = pn
+				dm.PlayerSlot = pn
 				break
 			}
 		}
