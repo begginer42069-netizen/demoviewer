@@ -261,6 +261,35 @@ func RunWhatIf(dm *Demo, j *Jump, newPre float64, newEdge *float64, fog int) Wha
 		res.Path = append(res.Path, st.x, st.y, st.z, math.Hypot(st.vx, st.vy))
 	}
 	r.T1 = len(r.D)/9 - 1
+	// a simulated landing on the block: carry on along the block top with
+	// GoldSrc ground friction (sv_friction 4, sv_stopspeed 75) until stopped.
+	// No new inputs are made up: the player just slides out, view held still.
+	if res.Landed && len(states) > 1 && len(r.D) >= 9 {
+		st := states[len(states)-1]
+		last := r.D[len(r.D)-9:]
+		pitch, yaw, btn := last[3], last[4], last[6]
+		ducked := int(btn)&4 != 0
+		oz := j.landTop + 36
+		eye := 17.0
+		if ducked {
+			oz, eye = j.landTop+18, 12
+		}
+		x, y, vx, vy := st.x, st.y, st.vx, st.vy
+		for k := 0; k < 90; k++ {
+			ft := 0.01
+			sp := math.Hypot(vx, vy)
+			if sp > 0.1 {
+				drop := math.Max(sp, 75) * 4 * ft
+				ns := math.Max(0, sp-drop)
+				vx, vy = vx*ns/sp, vy*ns/sp
+			} else {
+				vx, vy = 0, 0
+			}
+			x += vx * ft
+			y += vy * ft
+			r.D = append(r.D, x, y, oz+eye, pitch, yaw, 0, btn, math.Hypot(vx, vy), 1)
+		}
+	}
 	// hold the last frame for a moment
 	if n := len(r.D); n >= 9 {
 		last := append([]float64(nil), r.D[n-9:]...)
