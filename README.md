@@ -1,7 +1,58 @@
-# DEMviewer (demoviewer)
+# DEMviewer
 
-Jump stats, 3D replay and what-if simulation for CS 1.6 kreedz demos (.dem).
+Jump stats, 3D replay, strafe and yaw analysis and what-if simulation for **CS 1.6 kreedz demos** (.dem).
 By Claude & beggineR.
+
+![Jump list](docs/list.png)
+
+## Download
+
+Get the latest **DEMviewer.exe** from [Releases](../../releases), then just run it: no install needed.
+`kz_longjumps2`, `kz_longjumps3` and `kz_longjumparena` are built in. Other maps are picked up from your
+`cstrike/maps` or `cstrike_downloads/maps` folder, or from a maps folder you choose in the app.
+
+Linux: build it yourself (see Build below). It opens in your browser.
+
+## What it does
+
+**Jump list**
+- Finds every jump in every demo in a folder: LJ, HJ, CJ, DCJ, MCJ, WJ, BJ, SBJ and ladder jumps, with backwards and sideways detection.
+- **Best jumps** shows one valid landed jump per demo; **all attempts** shows every jump with the time it happens in the demo.
+- Click any column header to sort; the type filter and the demo's file name (`_lj_`, `_sbj_`, `_ldj_` ...) help find the right jump.
+
+**Stats that match the server plugins**
+
+![Jump stats](docs/stats.png)
+
+- Distance, prestrafe, FOG, jumpoff, block, landing / lasting, maxspeed and gain, strafes and efficiency, rebuilt to match
+  **kz_jump_stats** (distance within about 0.02 on tested demos) and the [MAIN] ladder stats.
+- Strafe table with gain, loss, eff, overlaps, **dead airtime** and GC-style turn efficiency.
+- **Mouse slaps**: strafe switches where the mouse hits the other side like a wall (2-frame swing of 110% or more),
+  calibrated on known slap and no-slap demos.
+- **Yaw acceleration at switches**, average and peak.
+- **Settings check**: server movement settings, cl_lw and fps from the demo, compared with the league rules.
+
+**Timeline**
+
+![Timeline](docs/timeline.png)
+
+- Yaw speed and yaw acceleration graphs, and one block per frame for every key: jump, duck, forward, back, moveleft, moveright, ground, duck state and dead air.
+- Mouse wheel zooms, dragging moves, clicking jumps the replay to that frame, hovering shows the frame (or the jump's stats).
+
+**3D replay in the real map**
+
+![Replay](docs/replay.jpg)
+
+- First person, behind, side or top view with the player's hitbox, so edge landings are easy to see.
+- Moving blocks (bhop blocks, longjumparena layouts) move like they did in the demo.
+
+**What-if**
+
+![What-if](docs/whatif.png)
+
+- Re-runs the player's real inputs from take-off with a different prestrafe, jumpoff or FOG, using GoldSrc air physics.
+- Shows whether it lands, the new distance, a self-check of the simulator against the real jump, and a replay with the real jump as a ghost.
+  Simulated replays are always marked **WHAT-IF · SIMULATED**.
 
 ## Build
 
