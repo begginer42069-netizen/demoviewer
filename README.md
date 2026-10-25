@@ -54,19 +54,44 @@ Linux: build it yourself (see Build below). It opens in your browser.
 - Shows whether it lands, the new distance, a self-check of the simulator against the real jump, and a replay with the real jump as a ghost.
   Simulated replays are always marked **WHAT-IF · SIMULATED**.
 
+## Releases and versions
+
+Every push to `main` is built for Windows and Linux by GitHub Actions
+(`.github/workflows/release.yml`) and published as a new release with
+**DEMviewer.exe** and **DEMviewer-linux-amd64**. The version shown in the app
+header is the release version.
+
+Versions follow semantic versioning, `vMAJOR.MINOR.PATCH`, bumped from the
+commit messages since the last release:
+
+| Commit message starts with | Bump | Example |
+|---|---|---|
+| `fix:` or anything else | patch | 1.2.3 → 1.2.4 |
+| `feat:` | minor | 1.2.3 → 1.3.0 |
+| `feat!:` / `fix!:`, or a line `BREAKING CHANGE` | major | 1.2.3 → 2.0.0 |
+
+Put `[skip release]` in a commit message to build without publishing.
+Changes to only the README or `docs/` don't trigger a build. You can also start
+a release by hand under **Actions → Build and release → Run workflow** and pick
+the bump. Pull requests are built but not released.
+
+The latest Windows build is always at
+`https://github.com/begginer42069-netizen/demoviewer/releases/latest/download/DEMviewer.exe`.
+
 ## Build
 
 Needs Go 1.24 or newer. Everything else is in this folder, so no internet is needed.
 
 ```
-sh build.sh
+sh build.sh            # version shows as "dev"
+VERSION=1.2.3 sh build.sh
 ```
 
 `build.sh` assembles `web/index.html` from `web/head.html`, `web/app.js` and
 `web/renderer.js`, then builds:
 
 - `dist/DEMviewer.exe`: Windows, its own window (WebView2), no console
-- `dist/demviewer-linux`: Linux, opens in the browser
+- `dist/DEMviewer-linux-amd64`: Linux, opens in the browser
 
 Run `build.sh` again after editing anything in `web/`, because the HTML is embedded into the binary.
 

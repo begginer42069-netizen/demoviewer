@@ -155,6 +155,9 @@ func mapDirs(demoDir string) []string {
 	return ds
 }
 
+// version is set at build time: -ldflags "-X main.version=1.2.3"
+var version = "dev"
+
 func summaries() []jumpSummary {
 	mu.Lock()
 	defer mu.Unlock()
@@ -218,7 +221,7 @@ func main() {
 		}
 		f := folder
 		mu.Unlock()
-		writeJSON(w, map[string]any{"folder": f, "mapsFolder": settings.MapsFolder, "demos": ds, "jumps": summaries()})
+		writeJSON(w, map[string]any{"version": version, "folder": f, "mapsFolder": settings.MapsFolder, "demos": ds, "jumps": summaries()})
 	})
 	mux.HandleFunc("/api/folder", func(w http.ResponseWriter, r *http.Request) {
 		var req struct{ Path string }

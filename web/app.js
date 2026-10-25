@@ -5,7 +5,7 @@ const fx=(v,d=3)=>v==null||isNaN(v)?'—':v.toFixed(d);
 let STATE=null,J=null,WI=null,sel=null,SORT={k:'dist',d:1};
 try{const s=JSON.parse(localStorage.getItem('dvSort')||'null');if(s&&s.k)SORT=s}catch(e){}
 
-async function loadState(){const r=await fetch('/api/state');STATE=await r.json();$('folder').value=STATE.folder||'';$('mapsdir').value=STATE.mapsFolder||'';renderRank()}
+async function loadState(){const r=await fetch('/api/state');STATE=await r.json();if(STATE.version)$('ver').textContent='· v'+STATE.version.replace(/^v/,'');$('folder').value=STATE.folder||'';$('mapsdir').value=STATE.mapsFolder||'';renderRank()}
 async function browse(kind){const r=await fetch('/api/browse?kind='+kind);if(!r.ok){alertBox(await r.text());return}const x=await r.json();if(x.cancelled)return;
  await loadState();if(kind==='demo'&&x.file){const hs=STATE.jumps.filter(j=>j.name===x.file||j.name.endsWith('\\'+x.file)||j.name.endsWith('/'+x.file)),hit=hs.find(j=>j.main)||hs[0];if(hit)openJump(hit.d,hit.j);else alertBox('No long jumps found in '+x.file)}
  else if(J&&kind==='maps'){openJump(J._d,J._j)}}
