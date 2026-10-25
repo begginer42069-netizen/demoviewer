@@ -1,0 +1,6 @@
+# build output
+dist/
+*.exe
+demviewer-linux
+# local settings
+demviewer_settings.json

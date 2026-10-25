@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DEMviewer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20256%20256%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238b5cf6%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%232e1670%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22arc%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffd166%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23ff6b3d%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22blk%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffffff%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23cfc4ff%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3CclipPath%20id%3D%22sq%22%3E%3Crect%20x%3D%228%22%20y%3D%228%22%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2256%22/%3E%3C/clipPath%3E%0A%20%20%3C/defs%3E%0A%20%20%3Crect%20x%3D%228%22%20y%3D%228%22%20width%3D%22240%22%20height%3D%22240%22%20rx%3D%2256%22%20fill%3D%22url%28%23bg%29%22/%3E%0A%20%20%3Cg%20clip-path%3D%22url%28%23sq%29%22%3E%0A%20%20%20%20%3Cellipse%20cx%3D%22128%22%20cy%3D%2220%22%20rx%3D%22170%22%20ry%3D%2290%22%20fill%3D%22%23ffffff%22%20opacity%3D%220.07%22/%3E%0A%20%20%20%20%3C%21--%20take-off%20block%2C%20gap%2C%20landing%20block%20--%3E%0A%20%20%20%20%3Crect%20x%3D%220%22%20y%3D%22182%22%20width%3D%2274%22%20height%3D%2280%22%20fill%3D%22url%28%23blk%29%22/%3E%0A%20%20%20%20%3Crect%20x%3D%22186%22%20y%3D%22182%22%20width%3D%2280%22%20height%3D%2280%22%20fill%3D%22url%28%23blk%29%22/%3E%0A%20%20%20%20%3Crect%20x%3D%2274%22%20y%3D%22182%22%20width%3D%22112%22%20height%3D%2280%22%20fill%3D%22%231b0c4a%22%20opacity%3D%220.6%22/%3E%0A%20%20%20%20%3Crect%20x%3D%220%22%20y%3D%22182%22%20width%3D%2274%22%20height%3D%226%22%20fill%3D%22%23ffffff%22/%3E%0A%20%20%20%20%3Crect%20x%3D%22186%22%20y%3D%22182%22%20width%3D%2280%22%20height%3D%226%22%20fill%3D%22%23ffffff%22/%3E%0A%20%20%3C/g%3E%0A%20%20%3C%21--%20the%20jump%20--%3E%0A%20%20%3Cpath%20d%3D%22M60%20176%20C%2084%2064%2C%20170%2052%2C%20204%20174%22%20fill%3D%22none%22%20stroke%3D%22%231b0c4a%22%20stroke-opacity%3D%220.35%22%20stroke-width%3D%2220%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%3Cpath%20d%3D%22M60%20172%20C%2084%2060%2C%20170%2048%2C%20204%20170%22%20fill%3D%22none%22%20stroke%3D%22url%28%23arc%29%22%20stroke-width%3D%2215%22%20stroke-linecap%3D%22round%22/%3E%0A%20%20%3Cpath%20d%3D%22M60%20172%20C%2084%2060%2C%20170%2048%2C%20204%20170%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-opacity%3D%220.85%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%20stroke-dasharray%3D%220.1%2018%22/%3E%0A%20%20%3C%21--%20landing%20marker%20--%3E%0A%20%20%3Ccircle%20cx%3D%22204%22%20cy%3D%22170%22%20r%3D%2214%22%20fill%3D%22%23ff6b3d%22%20stroke%3D%22%23fff%22%20stroke-width%3D%225%22/%3E%0A%3C/svg%3E%0A">
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1d2330;--mute:#667085;--line:#dfe3ea;--ground:#2f6fdb;--air:#e8890c;--land:#16a34a;--ghost:#9aa3b2;--bad:#d64545;--grid:#eceff4;--wi:#7c3aed}
+@media (prefers-color-scheme:dark){:root{--bg:#12151b;--card:#1b2029;--ink:#e8ebf2;--mute:#97a0b2;--line:#2c3342;--ground:#5b9bff;--air:#ffa94d;--land:#4ade80;--ghost:#6b7385;--bad:#ff6b6b;--grid:#252b38;--wi:#b794ff}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,Segoe UI,sans-serif}
+main{max-width:1240px;margin:0 auto;padding:18px 16px 40px}
+h1{font-size:20px;margin:0 0 2px}
+.brand{display:flex;align-items:center;gap:14px;margin:0 0 16px}.brand .ic{width:52px;height:52px;flex:none;filter:drop-shadow(0 4px 10px rgba(91,33,182,.35))}
+.brand h1{font-size:30px;font-weight:800;letter-spacing:-.5px;margin:0;line-height:1}.brand h1 span{color:var(--wi)}
+.brand .tag{color:var(--mute);font-size:11px;font-weight:600;letter-spacing:.18em;margin-top:5px}.sub{color:var(--mute);margin:0 0 14px}
+.bar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:end;margin-bottom:12px}
+label{color:var(--mute);font-size:12px;display:flex;flex-direction:column;gap:3px}
+select,button,input[type=text],input[type=number]{font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+input[type=number]{width:110px}
+button{cursor:pointer}button.primary{background:var(--wi);color:#fff;border-color:var(--wi)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:14px}
+.card h2{font-size:13px;margin:0 0 8px;color:var(--mute);font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin-bottom:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.stat b{display:block;font-size:20px}.stat span{color:var(--mute);font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}th{color:var(--mute);font-weight:600}
+tr.sel td{background:rgba(124,58,237,.12)}#rank tr[data-k]{cursor:pointer}#rank tr[data-k]:hover td{background:rgba(127,127,127,.08)}
+.pill{display:inline-block;border-radius:6px;padding:0 6px;font-size:12px;font-weight:600}
+.ok{color:var(--land)}.bad{color:var(--bad)}.wi{color:var(--wi)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:860px){.grid2{grid-template-columns:1fr}}
+canvas.ch{width:100%;height:230px;display:block}
+pre.pl{white-space:pre-wrap;font:12px ui-monospace,Consolas,monospace;margin:0 0 8px;padding:8px;background:rgba(127,127,127,.08);border-radius:6px}
+.verdict{font-size:22px;font-weight:700;margin:4px 0}
+.mute{color:var(--mute)}a{color:var(--wi)}.small{font-size:12px}
+.scroll{max-height:330px;overflow:auto}
+#rank th.srt{cursor:pointer;user-select:none}#rank th.srt:hover{color:#fff}#rank th.on{color:#ffa94d}
+#tltip{position:fixed;display:none;z-index:50;pointer-events:none;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 6px 20px rgba(0,0,0,.35);min-width:170px}#tltip td{padding:1px 8px 1px 0;border:0}#tltip .tt-h{font-weight:700;margin-bottom:4px}
+.tl-l{position:absolute;white-space:nowrap;font:400 13px/1 'Segoe UI',system-ui,sans-serif;color:var(--ink);letter-spacing:.01em}.tl-l.num{font-size:12px;color:var(--mute)}.tl-l.onbar{color:#fff;font-weight:600}.tl-rot{transform:translate(-50%,-50%) rotate(-90deg)}
+</style></head><body><main>
+<div class="brand"><div class="ic"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#2e1670"/>
+    </linearGradient>
+    <linearGradient id="arc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffd166"/>
+      <stop offset="1" stop-color="#ff6b3d"/>
+    </linearGradient>
+    <linearGradient id="blk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#cfc4ff"/>
+    </linearGradient>
+    <clipPath id="sq"><rect x="8" y="8" width="240" height="240" rx="56"/></clipPath>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#bg)"/>
+  <g clip-path="url(#sq)">
+    <ellipse cx="128" cy="20" rx="170" ry="90" fill="#ffffff" opacity="0.07"/>
+    <!-- take-off block, gap, landing block -->
+    <rect x="0" y="182" width="74" height="80" fill="url(#blk)"/>
+    <rect x="186" y="182" width="80" height="80" fill="url(#blk)"/>
+    <rect x="74" y="182" width="112" height="80" fill="#1b0c4a" opacity="0.6"/>
+    <rect x="0" y="182" width="74" height="6" fill="#ffffff"/>
+    <rect x="186" y="182" width="80" height="6" fill="#ffffff"/>
+  </g>
+  <!-- the jump -->
+  <path d="M60 176 C 84 64, 170 52, 204 174" fill="none" stroke="#1b0c4a" stroke-opacity="0.35" stroke-width="20" stroke-linecap="round"/>
+  <path d="M60 172 C 84 60, 170 48, 204 170" fill="none" stroke="url(#arc)" stroke-width="15" stroke-linecap="round"/>
+  <path d="M60 172 C 84 60, 170 48, 204 170" fill="none" stroke="#fff" stroke-opacity="0.85" stroke-width="5" stroke-linecap="round" stroke-dasharray="0.1 18"/>
+  <!-- landing marker -->
+  <circle cx="204" cy="170" r="14" fill="#ff6b3d" stroke="#fff" stroke-width="5"/>
+</svg>
+</div><div><h1>DEM<span>viewer</span></h1><div class="tag">JUMP STATS &middot; REPLAY &middot; WHAT-IF</div></div>
+<div class="mute small" style="margin-left:auto;text-align:right">Stats rebuilt to match kz_jump_stats<br>by Claude &amp; beggineR</div></div>
+<div class="bar">
+ <label style="flex:1;min-width:280px">Demo folder<input type="text" id="folder" placeholder="C:\path\to\demos"></label>
+ <button class="primary" id="bfolder">Browse folder&hellip;</button><button id="bdemo">Open demo&hellip;</button><button id="open">Reload</button>
+ <label style="flex:1;min-width:220px">Maps folder <span class="mute">(extra .bsp files, optional)</span><input type="text" id="mapsdir" readonly placeholder="built-in maps + cstrike\maps"></label>
+ <button id="bmaps">Browse&hellip;</button>
+ <label>Show<select id="filt"><option value="main">best jumps</option><option value="all">all attempts</option><option value="LANDED">all landed</option><option value="FAILED">all failed</option></select></label>
+ <label>Type<select id="tfilt"><option value="all">all types</option></select></label>
+ <span class="mute small" id="cnt"></span>
+</div>
+<div class="card"><h2>Jumps &mdash; click one to open it &middot; <a href="/results.csv">save as CSV</a></h2><div class="scroll"><table id="rank"></table></div></div>
+<div id="detail" style="display:none">
+ <h2 id="title" style="font-size:18px;margin:6px 0 10px"></h2>
+ <div class="stats" id="stats"></div>
+ <div class="grid2">
+  <div class="card"><h2>Strafes (kz_jump_stats rules)</h2><table id="strafes"></table><p class="mute small" style="margin:8px 0 0"><b>eff</b> (kz_jump_stats) = frames with a speed gain &divide; frames the key was held; on overlap frames only the newest key can score the gain. <b>avg eff (max)</b> (GC) = your mouse turn compared with the ideal turn for your speed, averaged over the strafe, and its best frame; over 100% means turning faster than ideal (ducking lowers the ideal turn a lot). GC sometimes splits strafes a frame differently, so averages can differ from GC's by a few %.</p></div>
+  <div class="card"><h2>Recorded in the demo by the server plugins</h2><div id="plugin"></div></div>
+ </div>
+ <div class="card"><h2>Replay &mdash; first person in the real map</h2>
+  <div style="position:relative;background:#000;border-radius:6px;overflow:hidden"><canvas id="rc" style="width:100%;height:540px;display:block"></canvas><canvas id="rh" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none"></canvas>
+  <div id="rmsg" style="display:none;position:absolute;left:12px;top:12px;right:12px;background:rgba(0,0,0,.7);color:#fff;padding:10px 12px;border-radius:6px;font-size:13px"></div></div>
+  <div class="bar" style="margin:10px 0 0"><button id="rp">Play</button><button id="rt">From take-off</button>
+  <label>Show<select id="rmode"><option value="real">Real jump</option><option value="wi" disabled>What-if (simulated)</option></select></label>
+  <label><span><input type="checkbox" id="gh" checked> ghost of the other run</span></label>
+  <label>Speed<select id="rv"><option value="0.1">0.1x</option><option value="0.25" selected>0.25x</option><option value="0.5">0.5x</option><option value="1">1x (real time)</option></select></label>
+  <label>Camera<select id="rcam"><option value="fp">First person</option><option value="chase">Behind (shows hitbox)</option><option value="side">Side (shows hitbox)</option><option value="top">Top (shows hitbox)</option></select></label>
+  <label>FOV <span id="rfl">100</span><input type="range" id="rf2" min="70" max="120" value="100"></label>
+  <label style="flex:1;min-width:200px">Time<input type="range" id="rs" min="0" max="100" value="0" style="width:100%"></label></div></div>
+ <div class="card"><h2>What-if take-off &mdash; same strafes, different pre / jumpoff</h2>
+  <p class="mute small" style="margin:0 0 8px">Only the take-off changes: speed is set to your pre (same direction) and the take-off point is moved so the jumpoff matches. Every input from the jump on is the player's own. Nothing before the jump is simulated.<br>
+  FOG: jump on an earlier ground frame (1 = the first frame on the ground). Pre and jumpoff then fill in with what you really had on that frame &mdash; change them further if you like. FOG can't go above what you actually did.</p>
+  <div class="bar"><label>FOG (frames on ground)<input type="number" id="wfog" min="1" step="1" style="width:90px"></label>
+   <label>Prestrafe (u/s)<input type="number" id="wpre" step="0.01"></label>
+   <label>Jumpoff (units)<input type="number" id="wedge" step="0.01" min="0"></label>
+   <button class="primary" id="wrun">Run what-if</button><button id="wreal">Reset to real</button></div>
+  <div id="wres"></div></div>
+ <div class="grid2">
+  <div class="card"><h2>Top view &mdash; along the block / sideways (units), dashed = take-off edge and block face</h2><canvas class="ch" id="c1"></canvas></div>
+  <div class="card"><h2>Side view &mdash; along the block / height above take-off (units)</h2><canvas class="ch" id="c2"></canvas></div>
+  <div class="card"><h2>Speed per frame (u/s)</h2><canvas class="ch" id="c3"></canvas></div>
+  <div class="card"><h2>Mouse turn per frame (deg) &mdash; a slap is a flip that stays fast on both sides</h2><canvas class="ch" id="c4"></canvas></div>
+ </div>
+ <div class="card"><h2>Timeline &mdash; yaw speed, yaw acceleration and keys per frame &middot; <span class="small">wheel = zoom, drag = move, click = jump the replay there</span></h2><div style="position:relative"><canvas id="tl" style="width:100%;height:660px;display:block;cursor:crosshair"></canvas><div id="tllab" style="position:absolute;inset:0;pointer-events:none"></div></div></div>
+</div>
+<p class="sub" style="margin-top:12px">Accuracy vs kz_jump_stats on test demos: distance &plusmn;0.02, jumpoff &plusmn;0.01, landing/lasting &plusmn;0.02, block exact, prestrafe &plusmn;0.06 (demos store speed in 1/8 u/s steps), strafes/efficiency usually within a few %. Movable blocks (e.g. kz_longjumparena) can't be measured from the map file.</p>
+</main>
