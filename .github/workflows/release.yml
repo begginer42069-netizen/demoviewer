@@ -6,7 +6,9 @@ name: Build and release
 #   "feat: ..."                      -> minor  (1.2.3 -> 1.3.0)
 #   "fix: ..." or anything else      -> patch  (1.2.3 -> 1.2.4)
 #   "feat!: ...", "BREAKING CHANGE"  -> major  (1.2.3 -> 2.0.0)
-#   "[skip release]" in a commit     -> build only, no release
+#   "[skip release]" in the commit   -> build only, no release
+# Release notes come from the "## Unreleased" section of CHANGELOG.md, which
+# is then renamed to the new version and committed back.
 # Pull requests only build. "Run workflow" lets you pick the bump by hand.
 
 on:
@@ -14,6 +16,7 @@ on:
     branches: [main]
     paths-ignore:
       - "README.md"
+      - "CHANGELOG.md"
       - "docs/**"
   pull_request:
   workflow_dispatch:
@@ -23,6 +26,10 @@ on:
         type: choice
         options: [auto, patch, minor, major]
         default: auto
+      notes_for:
+        description: "Only rewrite the notes of an existing release from CHANGELOG.md (e.g. v1.2.0); leave empty to build and release"
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -32,7 +39,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  notes:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.notes_for != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rewrite the release notes from CHANGELOG.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.notes_for }}
+        run: |
+          awk -v t="$TAG" 'index($0,"## " t " ")==1 || $0=="## " t {on=1;next} /^## /{if(on)exit} on' CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then echo "no section for $TAG in CHANGELOG.md"; exit 1; fi
+          cat notes.md
+          gh release edit "$TAG" --notes-file notes.md
+
   build:
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.notes_for == ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -76,7 +99,7 @@ jobs:
 
           release=true
           if [ "${{ github.event_name }}" = pull_request ]; then release=false; version="$version-pr${{ github.event.number }}"; fi
-          if printf '%s\n' "$msgs" | grep -qi '\[skip release\]' && [ "${{ github.event_name }}" != workflow_dispatch ]; then release=false; fi
+          if git log -1 --format=%B | grep -qi '\[skip release\]' && [ "${{ github.event_name }}" != workflow_dispatch ]; then release=false; fi
 
           echo "last tag: ${last:-none}, bump: $bump -> v$version (release: $release)"
           echo "version=$version" >> "$GITHUB_OUTPUT"
@@ -94,6 +117,20 @@ jobs:
             dist/DEMviewer.exe
             dist/DEMviewer-linux-amd64
 
+      - name: Release notes from CHANGELOG.md
+        if: steps.ver.outputs.release == 'true'
+        env:
+          TAG: v${{ steps.ver.outputs.version }}
+        run: |
+          # the text under "## Unreleased" (up to the next "## " heading)
+          awk '/^## Unreleased/{on=1;next} /^## /{if(on)exit} on' CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            # nothing written: list the commit subjects instead
+            last=$(git tag -l 'v*' --sort=-v:refname | head -n1)
+            git log --format='- %s' ${last:+$last..}HEAD | sed -E 's/^- [a-z]+(\([^)]*\))?!?: /- /' > notes.md
+          fi
+          echo "----- notes -----"; cat notes.md
+
       - name: Publish the release
         if: steps.ver.outputs.release == 'true'
         env:
@@ -103,4 +140,19 @@ jobs:
           gh release create "$TAG" dist/DEMviewer.exe dist/DEMviewer-linux-amd64 \
             --target "$GITHUB_SHA" \
             --title "DEMviewer $TAG" \
-            --generate-notes
+            --notes-file notes.md
+
+      - name: Move the Unreleased notes under the new version in CHANGELOG.md
+        if: steps.ver.outputs.release == 'true' && github.ref == 'refs/heads/main'
+        env:
+          TAG: v${{ steps.ver.outputs.version }}
+        run: |
+          grep -q '^## Unreleased' CHANGELOG.md || exit 0
+          today=$(date -u +%Y-%m-%d)
+          awk -v tag="$TAG" -v d="$today" '/^## Unreleased/ && !done {print "## Unreleased\n\n## " tag " (" d ")"; done=1; next} {print}' CHANGELOG.md > CHANGELOG.tmp
+          mv CHANGELOG.tmp CHANGELOG.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "docs: changelog for $TAG [skip release]"
+          git push origin HEAD:main || echo "could not push the changelog update (main moved on); edit CHANGELOG.md by hand"
+

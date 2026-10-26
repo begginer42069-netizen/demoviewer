@@ -76,8 +76,12 @@ commit messages since the last release:
 | `feat:` | minor | 1.2.3 → 1.3.0 |
 | `feat!:` / `fix!:`, or a line `BREAKING CHANGE` | major | 1.2.3 → 2.0.0 |
 
+Release notes are written by hand in [CHANGELOG.md](CHANGELOG.md): add entries under
+**Unreleased**, and the release workflow uses that section as the release notes, then
+moves it under the new version number.
+
 Put `[skip release]` in a commit message to build without publishing.
-Changes to only the README or `docs/` don't trigger a build. You can also start
+Changes to only the README, CHANGELOG or `docs/` don't trigger a build. You can also start
 a release by hand under **Actions → Build and release → Run workflow** and pick
 the bump. Pull requests are built but not released.
 
